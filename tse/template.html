@@ -43,7 +43,7 @@ header .sub { color: var(--head-fg2); font-size: 0.85rem; }
 .head-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .pill { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.4rem 0.85rem; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: var(--head-fg); cursor: pointer; transition: background .2s; white-space: nowrap; }
 .pill:hover { background: rgba(255,255,255,0.14); }
-.pill:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, .tile:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pill:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .status { display: inline-flex; align-items: center; gap: 0.45rem; cursor: default; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: #FFA726; }
 .status.final .dot { background: #66BB6A; }
@@ -91,14 +91,18 @@ select, input[type="search"] { font-family: var(--f-body); font-size: 0.85rem; c
 
 .section-title { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
 .section-title h2 { font-size: 1.2rem; font-weight: 700; }
-.mapgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; max-width: 560px; }
-.tile { aspect-ratio: 1 / 0.86; max-width: 100%; border-radius: 8px; padding: 0.35rem 0.45rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; color: var(--fg); background: color-mix(in srgb, var(--kc) var(--mix), var(--card)); transition: transform .15s; min-width: 0; }
-.tile:hover { transform: translateY(-2px); }
-.tile.sel { border-color: var(--fg); }
-.tile b { font-family: var(--f-display); font-size: 0.85rem; }
-.tile small { font-family: var(--f-mono); font-size: 0.62rem; line-height: 1.2; }
-.tile.strong { color: #FFFFFF; }
-.maplayout { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.mapbox { min-width: 0; }
+.mapsvg { display: block; width: 100%; height: auto; max-width: 680px; }
+.mapsvg .ghost { fill: none; stroke: var(--fg2); stroke-opacity: 0.35; stroke-width: 0.8; stroke-dasharray: 3 3; }
+.mapsvg .st { cursor: pointer; outline: none; }
+.mapsvg .st path, .mapsvg .st rect { fill: color-mix(in srgb, var(--kc) var(--mix), var(--card)); stroke: var(--card); stroke-width: 1; vector-effect: non-scaling-stroke; transition: filter .15s; }
+.mapsvg .st:hover path, .mapsvg .st:hover rect, .mapsvg .st:focus-visible path, .mapsvg .st:focus-visible rect { filter: brightness(1.1) saturate(1.15); stroke: var(--fg); stroke-width: 1.5; }
+.mapsvg .st.sel path, .mapsvg .st.sel rect { stroke: var(--fg); stroke-width: 2.5; }
+.mapsvg text { font-family: var(--f-display); font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; fill: var(--fg); paint-order: stroke; stroke: color-mix(in srgb, var(--card) 70%, transparent); stroke-width: 3px; }
+.mapsvg text.on-strong { fill: #FFFFFF; stroke: rgba(0,0,0,0.25); }
+.mapsvg text tspan.p { font-family: var(--f-mono); font-weight: 500; }
+.mapsvg .ext-lbl { font-family: var(--f-mono); font-weight: 500; fill: var(--fg2); stroke: none; }
+.maplayout { display: grid; grid-template-columns: minmax(0, 680px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
 .legend { display: grid; gap: 0.5rem; font-size: 0.82rem; }
 .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--kc); margin-right: 0.45rem; vertical-align: -1px; }
 .ramp { display: flex; gap: 3px; margin-top: 0.25rem; }
@@ -119,6 +123,24 @@ tbody tr.sel { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 
 footer { font-size: 0.78rem; color: var(--fg2); padding: 0 16px 2.5rem; }
 footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+
+.vlead { font-size: 0.95rem; max-width: 70ch; margin-bottom: 1.25rem; }
+.vlead strong { font-family: var(--f-display); }
+.vbar-wrap { position: relative; padding-bottom: 1.6rem; }
+.vbar { display: flex; height: 54px; border-radius: 10px; overflow: hidden; background: var(--track); }
+.vbar > div { background: var(--kc); color: #FFFFFF; display: flex; flex-direction: column; justify-content: center; padding: 0 0.6rem; min-width: 0; overflow: hidden; white-space: nowrap; border-right: 2px solid var(--card); }
+.vbar > div:last-child { border-right: 0; }
+.vbar b { font-family: var(--f-display); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; }
+.vbar small { font-family: var(--f-mono); font-size: 0.7rem; }
+.vmark { position: absolute; left: 50%; top: -6px; bottom: 0; border-left: 2px dashed var(--fg); }
+.vmark span { position: absolute; bottom: 0; left: 6px; font-family: var(--f-mono); font-size: 0.65rem; color: var(--fg2); white-space: nowrap; }
+.vkeys { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.78rem; color: var(--fg2); }
+.vkeys span { display: inline-flex; gap: 0.35rem; align-items: center; }
+.vkeys i { width: 10px; height: 10px; border-radius: 3px; background: var(--kc); }
+.vtable { min-width: 520px; }
+.vtable td:first-child { white-space: normal; }
+.duel { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 0.4rem 0; }
+.duel i { display: block; height: 100%; }
 
 .tabs { display: flex; gap: 0.5rem; padding-top: 1rem; }
 .tab { font-family: var(--f-display); font-weight: 600; font-size: 0.9rem; border-radius: 999px; padding: 0.45rem 1.2rem; border: 1px solid rgba(255,255,255,0.16); background: transparent; color: var(--head-fg2); cursor: pointer; }
@@ -159,9 +181,9 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
 .toast { position: fixed; left: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--head); color: var(--head-fg); font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
 .fade { animation: fadeIn .4s ease; }
 @keyframes fadeIn { from { opacity: .4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .fade { animation: none; } .bar > i, .tile { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .fade { animation: none; } .bar > i, .mapsvg .st path { transition: none; } }
 @media (max-width: 900px) { .grid, .maplayout { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 480px) { .tile small { display: none; } .cvals .pct { font-size: 1rem; } }
+@media (max-width: 480px) { .cvals .pct { font-size: 1rem; } }
 @media print {
   #themeBtn, #copyBtn, .toast, select, input[type="search"] { display: none !important; }
   body { background: #fff; color: #000; }
@@ -183,6 +205,7 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
   </div>
   <nav class="wrap tabs" role="tablist" aria-label="Cargo">
     <button class="tab" role="tab" id="tabBtn-presidente" data-tab="presidente" type="button">Presidente</button>
+    <button class="tab" role="tab" id="tabBtn-validos" data-tab="validos" type="button">Votos válidos</button>
     <button class="tab" role="tab" id="tabBtn-senado" data-tab="senado" type="button">Senado</button>
   </nav>
 </header>
@@ -210,10 +233,10 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
     <section class="card" aria-labelledby="mapTitle">
       <div class="section-title">
         <h2 id="mapTitle">Quem lidera em cada UF</h2>
-        <span class="label">Clique em uma UF para ver o detalhe</span>
+        <span class="label">Área de cada estado proporcional ao eleitorado · clique para ver o detalhe</span>
       </div>
       <div class="maplayout">
-        <div class="mapgrid" id="map"></div>
+        <div class="mapbox" id="map"></div>
         <div class="legend" id="legend"></div>
       </div>
     </section>
@@ -230,6 +253,35 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
         </table>
       </div>
     </section>
+  </div>
+
+  <div class="wrap stack" id="tab-validos" role="tabpanel" aria-labelledby="tabBtn-validos" hidden>
+    <section class="card fade" aria-labelledby="valTitle">
+      <div class="scope-bar">
+        <h2 id="valTitle">Brasil</h2>
+        <div class="head-tools">
+          <label class="label" for="scopeSel2">Recorte</label>
+          <select id="scopeSel2"></select>
+        </div>
+      </div>
+      <p class="vlead" id="valLead"></p>
+      <div class="vbar-wrap">
+        <div class="vbar" id="valBar" role="img"></div>
+        <div class="vmark"><span>50% + 1 voto</span></div>
+      </div>
+      <div class="vkeys" id="valKeys"></div>
+    </section>
+
+    <div class="grid">
+      <section class="card" aria-labelledby="valTblTitle">
+        <div class="section-title"><h2 id="valTblTitle">Cada candidato nos votos válidos</h2></div>
+        <div class="tablebox"><table class="vtable">
+          <thead><tr><th>Candidato</th><th class="r">Votos válidos</th><th class="r">% dos válidos</th><th class="r">Atrás do líder</th></tr></thead>
+          <tbody id="valBody"></tbody>
+        </table></div>
+      </section>
+      <aside class="card" aria-label="Maioria absoluta" id="valSide"></aside>
+    </div>
   </div>
 
   <div class="wrap stack" id="tab-senado" role="tabpanel" aria-labelledby="tabBtn-senado" hidden>
@@ -280,8 +332,6 @@ const pf = (x, d = 2) => x.toLocaleString("pt-BR", { minimumFractionDigits: d, m
 const KNOWN = ["22", "13", "70", "55", "14", "30"];
 const kc = n => `var(--k${KNOWN.includes(n) ? n : "x"})`;
 const META = Object.fromEntries(D.brasil.cands.map(c => [c.n, c]));
-const UFPOS = { RR:[1,0], AP:[3,0], AM:[1,1], PA:[2,1], MA:[3,1], CE:[4,1], RN:[5,1], AC:[0,2], RO:[1,2], MT:[2,2], TO:[3,2], PI:[4,2], PB:[5,2],
-  MS:[1,3], GO:[2,3], DF:[3,3], BA:[4,3], PE:[5,3], PR:[1,4], SP:[2,4], MG:[3,4], ES:[4,4], AL:[5,4], SC:[1,5], RJ:[3,5], SE:[5,5], RS:[1,6], ZZ:[5,6] };
 const $ = id => document.getElementById(id);
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
 
@@ -366,14 +416,36 @@ function rowData(u) {
 
 function renderMap() {
   const rows = D.ufs.map(rowData);
-  $("map").innerHTML = rows.map(({ u, a, margem, lider }) => {
-    const [c, r] = UFPOS[u.uf];
+  const G = D.geo || {};
+  // Cartograma não contíguo: cada UF encolhe em torno do próprio centro até a área ficar
+  // proporcional ao eleitorado. Referência = a UF com mais eleitores, que fica no tamanho real.
+  const maior = rows.filter(r => G[r.u.uf]).sort((x, y) => y.u.te - x.u.te)[0].u;
+  const ref = maior.te / G[maior.uf].a;
+  const fator = r => r.u.uf === "ZZ" ? 0 : Math.sqrt(r.u.te / G[r.u.uf].a / ref);
+  const ghost = Object.values(G).map(g => `<path class="ghost" d="${g.d}"/>`).join("");
+  let shapes = "", labels = "";
+  // Estados ampliados por último, para ficarem por cima dos vizinhos que encolheram.
+  rows.filter(r => r.u.uf === "ZZ" || G[r.u.uf]).sort((x, y) => fator(x) - fator(y)).forEach(({ u, a, margem, lider }) => {
     const mix = Math.round(Math.min(92, 28 + margem * 1.6));
-    return `<div class="tile ${mix > 58 ? "strong" : ""} ${scope === u.uf ? "sel" : ""}" role="button" tabindex="0" data-uf="${u.uf}"
-      style="grid-column:${c + 1};grid-row:${r + 1};--kc:${kc(a.n)};--mix:${mix}%"
-      title="${u.nome}: ${lider} ${pf(a.p)} · margem ${margem.toFixed(1).replace(".", ",")} pp · ${pf(u.pst)} totalizadas">
-      <b>${u.uf === "ZZ" ? "EXT" : u.uf}</b><small>${pf(a.p, 1)}<br>${Math.round(u.pst)}% apur.</small></div>`;
-  }).join("");
+    const tip = `${u.nome}: ${lider} ${pf(a.p)} · margem ${margem.toFixed(1).replace(".", ",")} pp · ${pf(u.pst)} totalizadas · ${nf.format(u.te)} eleitores`;
+    const common = `class="st ${scope === u.uf ? "sel" : ""}" data-uf="${u.uf}" role="button" tabindex="0" aria-label="${tip}" style="--kc:${kc(a.n)};--mix:${mix}%"`;
+    let cx, cy, side;
+    if (u.uf === "ZZ") {
+      side = Math.sqrt(u.te / ref); cx = 815; cy = 680;
+      shapes += `<g ${common}><title>${tip}</title><rect x="${cx - side / 2}" y="${cy - side / 2}" width="${side}" height="${side}" rx="3"/></g>`;
+      labels += `<text class="ext-lbl" x="${cx}" y="${cy + side / 2 + 12}" font-size="11">Exterior</text>`;
+    } else {
+      const g = G[u.uf]; if (!g) return;
+      const k = fator({ u });
+      side = Math.sqrt(g.a) * k; cx = g.cx; cy = g.cy;
+      shapes += `<g ${common} transform="translate(${cx} ${cy}) scale(${k.toFixed(4)}) translate(${-cx} ${-cy})"><title>${tip}</title><path d="${g.d}"/></g>`;
+    }
+    const fs = Math.max(9, Math.min(22, side * 0.24));
+    const cls = mix > 58 ? "on-strong" : "";
+    if (side >= 44) labels += `<text class="${cls}" x="${cx}" y="${cy}" font-size="${fs.toFixed(1)}"><tspan x="${cx}" dy="-0.45em">${u.uf === "ZZ" ? "EXT" : u.uf}</tspan><tspan class="p" x="${cx}" dy="1.15em" font-size="${Math.max(8.5, fs * 0.62).toFixed(1)}">${pf(a.p, 1)}</tspan></text>`;
+    else if (side >= 18) labels += `<text class="${cls}" x="${cx}" y="${cy}" font-size="${Math.max(8, side * 0.42).toFixed(1)}">${u.uf === "ZZ" ? "EXT" : u.uf}</text>`;
+  });
+  $("map").innerHTML = `<svg class="mapsvg" viewBox="0 0 880 790" role="group" aria-label="Mapa do Brasil com área dos estados proporcional ao eleitorado">${ghost}${shapes}${labels}</svg>`;
 
   const leaders = {};
   rows.forEach(r => { leaders[r.a.n] = (leaders[r.a.n] || 0) + 1; });
@@ -382,9 +454,10 @@ function renderMap() {
     + `<div class="small" style="margin-top:.5rem;color:var(--fg2);font-size:.78rem">Cor mais forte = margem maior sobre o 2º colocado.
        <div class="ramp"><i style="--mix:28%"></i><i style="--mix:45%"></i><i style="--mix:62%"></i><i style="--mix:80%"></i><i style="--mix:92%"></i></div>
        <span class="mono" style="font-size:.65rem">0 pp → 40+ pp</span></div>`
+    + `<div style="font-size:.78rem;color:var(--fg2)">A área de cada estado é proporcional ao número de eleitores. O tracejado mostra o tamanho real. ${(() => { const t = D.ufs.reduce((x, u) => x + u.te, 0), o = D.ufs.filter(u => u.uf !== "ZZ").sort((x, y) => y.te - x.te), mx = o[0], mn = o[o.length - 1]; return `${mx.nome} (${pf(mx.te / t * 100, 1)} do eleitorado) aparece no tamanho real, e os demais seguem a mesma escala. ${mn.nome} (${pf(mn.te / t * 100)}) é o menor.`; })()}</div>`
     + `<div style="font-size:.78rem;color:var(--fg2)">Cada UF tem seu próprio ritmo de totalização. Veja a coluna "Totalizadas" na tabela.</div>`;
 
-  $("map").querySelectorAll(".tile").forEach(t => {
+  $("map").querySelectorAll(".st").forEach(t => {
     t.onclick = () => setScope(t.dataset.uf);
     t.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setScope(t.dataset.uf); } };
   });
@@ -429,13 +502,44 @@ function renderTable() {
   });
 }
 
+function renderValidos(v) {
+  const cs = v.cands, [a, b] = cs, vv = cs.reduce((x, c) => x + c.vap, 0);
+  const maioria = Math.floor(vv / 2) + 1, outros = vv - a.vap, folga = a.vap - maioria;
+  $("valTitle").textContent = v.uf === "BR" ? "Brasil" : `${v.nome} (${v.uf})`;
+  $("valLead").innerHTML = `Aqui só entram os votos dados a candidatos. Brancos (${pf(v.pvb)}) e nulos (${pf(v.pvn)}) ficam de fora, como manda o art. 77, § 2º da Constituição para decidir o 1º turno. `
+    + (v.uf === "BR"
+      ? (folga > 0 ? `<strong>${a.nmu} tem ${nf.format(folga)} votos acima da maioria absoluta</strong> com ${pf(v.pst)} das seções totalizadas.`
+                   : `<strong>${a.nmu} está ${nf.format(-folga)} votos abaixo da maioria absoluta</strong> com ${pf(v.pst)} das seções totalizadas.`)
+      : `<strong>${a.nmu} lidera em ${v.nome}</strong> com ${pf(a.p)} dos válidos.`);
+  $("valBar").innerHTML = cs.filter(c => c.p >= 0.5).map(c => `<div style="--kc:${kc(c.n)};flex:${c.p} 1 0" title="${c.nmu}: ${pf(c.p)}">${c.p >= 6 ? `<b>${c.nmu}</b><small>${pf(c.p, 1)}</small>` : ""}</div>`).join("")
+    + `<div style="--kc:var(--kx);flex:${cs.filter(c => c.p < 0.5).reduce((x, c) => x + c.p, 0)} 1 0" title="Demais candidatos"></div>`;
+  $("valBar").setAttribute("aria-label", cs.slice(0, 5).map(c => `${c.nmu} ${pf(c.p)}`).join(", "));
+  const peq = cs.filter(c => c.p < 0.5);
+  $("valKeys").innerHTML = cs.filter(c => c.p >= 0.5).map(c => `<span style="--kc:${kc(c.n)}"><i></i>${c.nmu} ${pf(c.p, 1)}</span>`).join("")
+    + (peq.length ? `<span style="--kc:var(--kx)"><i></i>Outros ${peq.length} candidatos ${pf(peq.reduce((x, c) => x + c.p, 0), 2)}</span>` : "");
+  $("valBody").innerHTML = cs.map(c => `<tr style="--kc:${kc(c.n)}"><td><span class="chip"><i></i>${c.nmu}</span> <span class="mono" style="color:var(--fg2);font-size:.72rem">${c.n} · ${c.sg}</span></td>
+    <td class="r">${nf.format(c.vap)}</td><td class="r">${pf(c.p)}</td><td class="r">${c === a ? "Líder" : nf.format(a.vap - c.vap)}</td></tr>`).join("");
+  $("valSide").innerHTML = `
+    <div class="kpi"><span class="label">Votos válidos apurados</span><span class="big num">${nf.format(vv)}</span>
+      <span class="small num">${pf(v.pvv)} do total de votos</span></div>
+    <div class="kpi"><span class="label">Maioria absoluta (50% + 1)</span><span class="big num">${nf.format(maioria)}</span>
+      <span class="small">votos necessários neste momento da apuração</span></div>
+    <div class="kpi"><span class="label">${a.nmu} × todos os outros</span>
+      <div class="duel" role="img" aria-label="${a.nmu} ${pf(a.p)}, demais ${pf(100 - a.p)}"><i style="width:${a.p}%;background:${kc(a.n)}"></i><i style="width:${100 - a.p}%;background:var(--kx)"></i></div>
+      <span class="small num">${nf.format(a.vap)} contra ${nf.format(outros)} (${pf(100 - a.p)})</span>
+      <span class="small num" style="color:${folga > 0 ? "var(--ok)" : "var(--warn)"};font-weight:600">${folga > 0 ? `Sobram ${nf.format(folga)} votos acima da maioria` : `Faltam ${nf.format(-folga)} votos para a maioria`}</span></div>
+    <div class="kpi"><span class="label">Diferença para o 2º colocado</span><span class="big num">${nf.format(a.vap - b.vap)}</span>
+      <span class="small num">${(a.p - b.p).toFixed(2).replace(".", ",")} pontos sobre ${b.nmu}</span></div>`;
+}
+
 function setScope(code) {
   scope = code;
   $("scopeSel").value = code;
+  $("scopeSel2").value = code;
   const v = view(code);
-  renderRanking(v); renderKpis(v); renderMap(); renderTable();
+  renderRanking(v); renderKpis(v); renderMap(); renderTable(); renderValidos(v);
   $("rankCard").classList.remove("fade"); void $("rankCard").offsetWidth; $("rankCard").classList.add("fade");
-  if (code !== "BR") $("rankCard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  if (code !== "BR" && !$("tab-presidente").hidden) $("rankCard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200); }
@@ -473,6 +577,8 @@ applyTheme(store.get("tse-theme"));
 $("scopeSel").innerHTML = `<option value="BR">Brasil</option>` + D.ufs.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
   .map(u => `<option value="${u.uf}">${u.nome}</option>`).join("");
 $("scopeSel").onchange = e => setScope(e.target.value);
+$("scopeSel2").innerHTML = $("scopeSel").innerHTML;
+$("scopeSel2").onchange = e => setScope(e.target.value);
 $("q").oninput = renderTable;
 
 const B = D.brasil;
@@ -552,16 +658,17 @@ function renderSenCards() {
 function setLado(l) { senLado = l; renderPlacar(); renderSenFilters(); renderSenCards(); }
 $("qs").oninput = renderSenCards;
 
-const TITLES = { presidente: "Apuração para Presidente da República", senado: "Apuração para o Senado Federal" };
+const TITLES = { presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", senado: "Apuração para o Senado Federal" };
 function setTab(t) {
   if (!S.length && t === "senado") t = "presidente";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
   $("tab-presidente").hidden = t !== "presidente";
   $("tab-senado").hidden = t !== "senado";
+  $("tab-validos").hidden = t !== "validos";
   $("pageTitle").textContent = TITLES[t];
   store.set("tse-tab", t);
 }
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 if (S.length) setLado("todos");
-setTab(location.hash === "#senado" ? "senado" : location.hash === "#presidente" ? "presidente" : store.get("tse-tab") || "presidente");
+setTab(["#senado", "#presidente", "#validos"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
 </script>

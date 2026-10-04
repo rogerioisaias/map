@@ -95,6 +95,40 @@ def candidatos(d):
     return sorted(out, key=lambda c: -c["vap"])
 
 
+def geometria():
+    """Projeta a malha do IBGE (tse/geo/ufs-br.geojson) em coordenadas de tela.
+
+    Devolve, por UF, o caminho SVG em tamanho real, o centroide e a área projetada.
+    O painel usa esses valores para encolher cada estado em torno do próprio centro
+    até a área ficar proporcional ao eleitorado (cartograma não contíguo).
+    """
+    import math
+    escala, cosl = 20, math.cos(math.radians(15))
+    proj = lambda lon, lat: ((lon + 74.2) * cosl * escala, (5.6 - lat) * escala)
+    geo = json.loads((AQUI / "geo" / "ufs-br.geojson").read_text(encoding="utf-8"))
+    saida = {}
+    for f in geo["features"]:
+        g = f["geometry"]
+        polys = [g["coordinates"]] if g["type"] == "Polygon" else g["coordinates"]
+        partes, area, cx, cy = [], 0.0, 0.0, 0.0
+        for poly in polys:
+            for i, anel in enumerate(poly):
+                pts = [proj(*c) for c in anel]
+                partes.append("M" + "L".join(f"{x:.1f},{y:.1f}" for x, y in pts) + "Z")
+                if i:
+                    continue
+                for (x1, y1), (x2, y2) in zip(pts, pts[1:] + pts[:1]):
+                    cr = x1 * y2 - x2 * y1
+                    area += cr / 2
+                    cx += (x1 + x2) * cr
+                    cy += (y1 + y2) * cr
+        saida[f["properties"]["uf"]] = {
+            "d": "".join(partes), "a": round(abs(area), 1),
+            "cx": round(cx / (6 * area), 1), "cy": round(cy / (6 * area), 1),
+        }
+    return saida
+
+
 def arquivo(uf):
     return f"{BASE}/dados/{uf}/{uf}-c{CARGO}-e{ELEICAO}-u.json"
 
@@ -140,6 +174,7 @@ def main():
             for uf, nome in UFS.items()
         ],
         "espectro": ESPECTRO,
+        "geo": geometria(),
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 

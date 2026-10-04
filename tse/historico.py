@@ -45,8 +45,8 @@ def carregar():
 
 
 def acrescentar(hist, novo):
-    """Só guarda o ponto se a soma das UFs ou o arquivo oficial mudou."""
-    if hist and hist[-1]["t"] == novo["t"] and hist[-1]["oficial"]["t"] == novo["oficial"]["t"]:
+    """Só guarda o ponto se a soma das UFs (horário ou seções) ou o arquivo oficial mudou."""
+    if hist and hist[-1]["t"] == novo["t"] and hist[-1]["st"] == novo["st"] and hist[-1]["oficial"]["t"] == novo["oficial"]["t"]:
         return hist
     return [*hist, novo]
 

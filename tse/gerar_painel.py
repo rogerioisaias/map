@@ -258,7 +258,9 @@ def main():
     b = dados["brasil"]
     print(f"{destino}  |  Brasil: {b['pst']:.2f}% das seções totalizadas às {b['hg']}"
           f"{' (soma das UFs; arquivo nacional às ' + nac['hg'] + ')' if b['fonte'] == 'soma' else ''}"
-          f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}")
+          f" [{b['st']} seções]"
+          f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}"
+          f" [{sum(u['st'] for u in dados['senado'])} seções]")
 
 
 if __name__ == "__main__":

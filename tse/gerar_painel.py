@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Baixa a apuração de Presidente (TSE, eleição 6257, 1º turno 2026) e gera um painel HTML autocontido.
+"""Baixa a apuração de Presidente (eleição 6257) e Senado (eleição 6259) do TSE, 1º turno 2026,
+e gera um painel HTML autocontido.
 
 Uso:
     python3 tse/gerar_painel.py            # gera tse/saida/apuracao-presidente-2026_<data>_<hora>.html
@@ -14,8 +15,19 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-BASE = "https://resultados.tse.jus.br/oficial/ele2026/6257"
+RAIZ = "https://resultados.tse.jus.br/oficial/ele2026"
+BASE = f"{RAIZ}/6257"
 ELEICAO, CARGO = "006257", "0001"
+SENADO_ELEICAO, SENADO_CARGO = "6259", "0005"
+
+# Classificação ideológica usada no placar do Senado. Ajuste aqui se discordar de algum partido.
+ESPECTRO = {
+    "esquerda": ["PT", "PSOL", "PCDOB", "PC do B", "PV", "REDE", "PSB", "PDT", "PCB", "PSTU", "UP", "PCO"],
+    "centro": ["MDB", "PSD", "PSDB", "CIDADANIA", "SOLIDARIEDADE", "AVANTE", "AGIR", "MOBILIZA", "PODE", "PMB"],
+    "direita": ["PL", "PP", "UNIÃO", "REPUBLICANOS", "NOVO", "PRD", "PRTB", "DC", "MISSÃO", "DEMOCRATA"],
+}
+ESPECTRO_DE = {sg.upper(): lado for lado, sgs in ESPECTRO.items() for sg in sgs}
+CACHE = Path(__file__).resolve().parent / ".cache"
 UFS = {
     "ac": "Acre", "al": "Alagoas", "am": "Amazonas", "ap": "Amapá", "ba": "Bahia", "ce": "Ceará",
     "df": "Distrito Federal", "es": "Espírito Santo", "go": "Goiás", "ma": "Maranhão",
@@ -28,7 +40,7 @@ BRT = timezone(timedelta(hours=-3))
 AQUI = Path(__file__).resolve().parent
 
 
-def baixar(url, tentativas=4):
+def baixar(url, tentativas=5):
     for i in range(tentativas):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0", "Cache-Control": "no-cache"})
@@ -37,7 +49,19 @@ def baixar(url, tentativas=4):
         except Exception:
             if i == tentativas - 1:
                 raise
-            time.sleep(2 ** (i + 1))
+            time.sleep(2 ** (i + 1))  # o TSE devolve 429 quando recebe muitas requisições seguidas
+
+
+def foto_b64(eleicao, uf, sq):
+    """Fotos não mudam durante a apuração: baixa uma vez e guarda em tse/.cache."""
+    local = CACHE / "fotos" / eleicao / uf / f"{sq}.jpeg"
+    try:
+        if not local.exists():
+            local.parent.mkdir(parents=True, exist_ok=True)
+            local.write_bytes(baixar(f"{RAIZ}/{eleicao}/fotos/{uf}/{sq}.jpeg"))
+        return "data:image/jpeg;base64," + base64.b64encode(local.read_bytes()).decode()
+    except Exception:
+        return ""
 
 
 def num(x):
@@ -75,26 +99,35 @@ def arquivo(uf):
     return f"{BASE}/dados/{uf}/{uf}-c{CARGO}-e{ELEICAO}-u.json"
 
 
+def arquivo_senado(uf):
+    return f"{RAIZ}/{SENADO_ELEICAO}/dados/{uf}/{uf}-c{SENADO_CARGO}-e00{SENADO_ELEICAO}-u.json"
+
+
+def senado(uf, nome, d):
+    vagas = int(d["carg"][0].get("nv") or 1)
+    cands = candidatos(d)
+    for i, c in enumerate(cands):
+        c["lado"] = ESPECTRO_DE.get(c["sg"].upper(), "centro")
+        c["foto"] = foto_b64(SENADO_ELEICAO, uf, c["sq"]) if i < vagas + 1 else ""
+        for k in ("nm", "sq", "coligacao", "situacao"):
+            c.pop(k, None)
+    return {"uf": uf.upper(), "nome": nome, "vagas": vagas, **resumo(d), "cands": cands}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-o", "--saida")
     args = ap.parse_args()
 
-    with ThreadPoolExecutor(8) as ex:
+    with ThreadPoolExecutor(4) as ex:
         brutos = dict(zip(["br", *UFS], ex.map(lambda u: json.loads(baixar(arquivo(u))), ["br", *UFS])))
+        ufs_sen = [u for u in UFS if u != "zz"]
+        sen_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_senado(u))), ufs_sen)))
 
     nac = brutos["br"]
     cands = candidatos(nac)
-
-    def foto(c):
-        try:
-            return "data:image/jpeg;base64," + base64.b64encode(baixar(f"{BASE}/fotos/br/{c['sq']}.jpeg")).decode()
-        except Exception:
-            return ""
-
-    with ThreadPoolExecutor(6) as ex:
-        for c, f in zip(cands, ex.map(foto, cands)):
-            c["foto"] = f
+    for c in cands:
+        c["foto"] = foto_b64("6257", "br", c["sq"])
 
     agora = datetime.now(BRT)
     dados = {
@@ -106,6 +139,8 @@ def main():
              "votos": {c["n"]: [c["vap"], c["p"]] for c in candidatos(brutos[uf])}}
             for uf, nome in UFS.items()
         ],
+        "espectro": ESPECTRO,
+        "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 
     html = (AQUI / "template.html").read_text(encoding="utf-8")
@@ -114,7 +149,8 @@ def main():
     destino = Path(args.saida) if args.saida else AQUI / "saida" / f"apuracao-presidente-2026_{agora.strftime('%Y-%m-%d_%Hh%M')}.html"
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(html, encoding="utf-8")
-    print(f"{destino}  |  Brasil: {dados['brasil']['pst']:.2f}% das seções totalizadas às {nac['hg']}")
+    print(f"{destino}  |  Brasil: {dados['brasil']['pst']:.2f}% das seções totalizadas às {nac['hg']}"
+          f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}")
 
 
 if __name__ == "__main__":

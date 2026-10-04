@@ -157,9 +157,14 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
 .side .d { font-size: 0.78rem; color: var(--fg2); }
 .seats { display: grid; grid-template-columns: repeat(27, minmax(0, 1fr)); gap: 4px; max-width: 720px; }
 .seat { display: inline-block; width: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--sc, var(--fg2)); border: 2px solid var(--sc, var(--fg2)); }
+.seat.keep { box-shadow: inset 0 0 0 2px var(--card); }
 .seat.lead { background: color-mix(in srgb, var(--sc, var(--fg2)) 22%, var(--card)); }
 .seat-key { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.78rem; color: var(--fg2); margin: 0.75rem 0 1rem; }
 .seat-key .seat { width: 11px; height: 11px; vertical-align: -1px; margin-right: 0.3rem; }
+.placar-view { margin-bottom: 1rem; }
+.side .delta { font-family: var(--f-mono); font-size: 0.8rem; font-weight: 500; margin-left: 0.4rem; }
+.marcos { font-size: 0.78rem; color: var(--fg2); margin-top: -0.4rem; margin-bottom: 1rem; }
+.hoje { font-size: 0.72rem; color: var(--fg2); }
 .parties { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .pchip { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.2rem 0.65rem; border: 1px solid color-mix(in srgb, var(--sc) 40%, transparent); color: var(--sc); background: color-mix(in srgb, var(--sc) 8%, transparent); }
 .filters { display: flex; gap: 0.35rem; flex-wrap: wrap; }
@@ -290,12 +295,10 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
         <h2 id="placarTitle">Placar do Senado</h2>
         <span class="label" id="placarSub"></span>
       </div>
+      <div class="filters placar-view" id="placarView" role="group" aria-label="O que o placar mostra"></div>
       <div class="placar" id="placar"></div>
       <div class="seats" id="seats" role="img"></div>
-      <div class="seat-key">
-        <span><i class="seat"></i> Eleito</span>
-        <span><i class="seat lead"></i> Lidera agora (entre os mais votados da UF)</span>
-      </div>
+      <div class="seat-key" id="seatKey"></div>
       <div class="parties" id="parties"></div>
     </section>
 
@@ -592,35 +595,68 @@ setScope("BR");
 /* ---------- Senado ---------- */
 const S = D.senado || [];
 const LADOS = [["esquerda", "Esquerda", "var(--esq)"], ["centro", "Centro", "var(--cen)"], ["direita", "Direita", "var(--dir)"]];
-const LCOR = Object.fromEntries(LADOS.map(([k, , c]) => [k, c]));
-const LNOME = Object.fromEntries(LADOS.map(([k, n]) => [k, n]));
+const LCOR = { ...Object.fromEntries(LADOS.map(([k, , c]) => [k, c])), sem: "var(--kx)" };
+const LNOME = { ...Object.fromEntries(LADOS.map(([k, n]) => [k, n])), sem: "Sem partido" };
 let senLado = "todos";
 
 function vagasDe(u) { return u.cands.slice(0, u.vagas).map(c => ({ ...c, uf: u.uf, st: c.eleito ? "eleito" : "lidera" })); }
 
+const SA = D.senadoAtual?.lista || [];
+const VIEWS = [["disputa", "Vagas em disputa"], ["hoje", "Senado hoje"], ["2027", "Senado em 2027"]].filter(([k]) => k === "disputa" || SA.length);
+let senView = "disputa";
+const ST_NOME = { eleito: "eleito", lidera: "lidera a apuração", atual: "senador hoje", fica: "mandato até 2031" };
+
+function assentos(view) {
+  const novos = S.flatMap(vagasDe).map(c => ({ nome: c.nmu, sg: c.sg, uf: c.uf, lado: c.lado, st: c.st }));
+  if (view === "disputa") return novos;
+  const atual = x => ({ nome: x.nome, sg: x.sg, uf: x.uf, lado: x.lado, st: view === "hoje" ? "atual" : "fica" });
+  return view === "hoje" ? SA.map(atual) : [...SA.filter(x => x.fim > 2027).map(atual), ...novos];
+}
+
 function renderPlacar() {
-  const all = S.flatMap(vagasDe);
-  const total = S.reduce((a, u) => a + u.vagas, 0);
+  const all = assentos(senView), hoje = assentos("hoje");
+  const total = all.length;
   const eleitos = all.filter(c => c.st === "eleito").length;
   const ultima = S.map(u => u.hg).sort().pop();
   const media = S.reduce((a, u) => a + u.pst, 0) / (S.length || 1);
-  $("placarSub").textContent = `${total} vagas em ${S.length} UFs · ${eleitos} definidas`;
+  const sem = all.filter(c => c.lado === "sem").length;
+  $("placarView").innerHTML = VIEWS.map(([k, n]) => `<button class="btn" type="button" data-v="${k}" aria-pressed="${senView === k}">${n}</button>`).join("");
+  $("placarView").querySelectorAll(".btn").forEach(b => b.onclick = () => { senView = b.dataset.v; renderPlacar(); });
+  $("placarSub").textContent = {
+    disputa: `${total} vagas em ${S.length} UFs · ${eleitos} definidas`,
+    hoje: `81 cadeiras · composição em ${D.senadoAtual?.versao?.slice(0, 10) ?? ""}`,
+    "2027": `27 que ficam até 2031 + ${S.flatMap(vagasDe).length} da eleição de hoje`,
+  }[senView] + (sem ? ` · ${sem} sem partido` : "");
   $("placar").innerHTML = LADOS.map(([k, nome, cor]) => {
     const g = all.filter(c => c.lado === k), e = g.filter(c => c.st === "eleito").length;
+    const h = hoje.filter(c => c.lado === k).length, d = g.length - h;
+    const det = {
+      disputa: `${e} eleitos · ${g.length - e} liderando · ${pf(g.length / total * 100, 1)} das vagas`,
+      hoje: `${pf(g.length / total * 100, 1)} das 81 cadeiras · ${g.filter(c => SA.find(x => x.nome === c.nome && x.fim === 2027)).length} mandatos acabam em 2027`,
+      "2027": `${g.filter(c => c.st === "fica").length} ficam + ${g.filter(c => c.st !== "fica").length} da eleição · hoje são ${h}`,
+    }[senView];
+    const delta = senView === "2027" ? `<span class="delta" style="color:${d > 0 ? "var(--ok)" : d < 0 ? "var(--warn)" : "var(--fg2)"}">${d > 0 ? "+" : ""}${d}</span>` : "";
     return `<button class="side ${senLado === k ? "on" : ""}" type="button" data-lado="${k}" style="--sc:${cor}" aria-pressed="${senLado === k}">
-      <div class="t">${nome}</div><div class="n num">${g.length}</div>
-      <div class="d num">${e} eleitos · ${g.length - e} liderando · ${pf(g.length / total * 100, 1)} das vagas</div></button>`;
-  }).join("");
+      <div class="t">${nome}</div><div class="n num">${g.length}${delta}</div>
+      <div class="d num">${det}</div></button>`;
+  }).join("") + (senView === "disputa" ? "" : `<div class="marcos" style="grid-column:1/-1">Maioria absoluta: 41 cadeiras. Emenda constitucional: 49 (três quintos). ${(() => { const top = LADOS.map(([k, n]) => [n, all.filter(c => c.lado === k).length]).sort((x, y) => y[1] - x[1])[0]; return top[1] >= 49 ? `${top[0]} chega aos três quintos.` : top[1] >= 41 ? `${top[0]} tem maioria absoluta sozinha.` : "Nenhum lado tem maioria absoluta sozinho."; })()}</div>`);
   $("placar").querySelectorAll(".side").forEach(b => b.onclick = () => setLado(senLado === b.dataset.lado ? "todos" : b.dataset.lado));
-  const ord = { esquerda: 0, centro: 1, direita: 2 };
-  const sorted = all.slice().sort((a, b) => ord[a.lado] - ord[b.lado] || (a.st === b.st ? 0 : a.st === "eleito" ? -1 : 1));
-  $("seats").innerHTML = sorted.map(c => `<i class="seat ${c.st === "lidera" ? "lead" : ""}" style="--sc:${LCOR[c.lado]}" title="${c.nmu} (${c.sg}, ${c.uf}) · ${c.st === "eleito" ? "eleito" : "lidera"}"></i>`).join("");
+  const ord = { esquerda: 0, centro: 1, direita: 2, sem: 3 }, sto = { atual: 0, fica: 0, eleito: 1, lidera: 2 };
+  const sorted = all.slice().sort((a, b) => ord[a.lado] - ord[b.lado] || sto[a.st] - sto[b.st]);
+  $("seats").innerHTML = sorted.map(c => `<i class="seat ${c.st === "lidera" ? "lead" : c.st === "fica" ? "keep" : ""}" style="--sc:${LCOR[c.lado] || "var(--kx)"}" title="${c.nome} (${c.sg}, ${c.uf}) · ${ST_NOME[c.st]}"></i>`).join("");
   $("seats").setAttribute("aria-label", LADOS.map(([k, n]) => `${n}: ${all.filter(c => c.lado === k).length}`).join(", "));
-  const porPartido = {};
+  $("seatKey").innerHTML = {
+    disputa: `<span><i class="seat"></i> Eleito</span><span><i class="seat lead"></i> Lidera agora (entre os mais votados da UF)</span>`,
+    hoje: `<span><i class="seat"></i> Senador em exercício, pelo partido atual</span>${sem ? `<span><i class="seat" style="--sc:var(--kx)"></i> Sem partido</span>` : ""}`,
+    "2027": `<span><i class="seat keep"></i> Mandato até 2031 (eleitos em 2022)</span><span><i class="seat"></i> Eleito hoje</span><span><i class="seat lead"></i> Lidera agora</span>${sem ? `<span><i class="seat keep" style="--sc:var(--kx)"></i> Sem partido</span>` : ""}`,
+  }[senView];
+  const porPartido = {}, hojeP = {};
   all.forEach(c => { porPartido[c.sg] = porPartido[c.sg] || { n: 0, lado: c.lado }; porPartido[c.sg].n++; });
+  hoje.forEach(c => { hojeP[c.sg] = (hojeP[c.sg] || 0) + 1; });
   $("parties").innerHTML = Object.entries(porPartido).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]))
-    .map(([sg, o]) => `<span class="pchip num" style="--sc:${LCOR[o.lado]}">${sg} ${o.n}</span>`).join("");
+    .map(([sg, o]) => { const d = o.n - (hojeP[sg] || 0); return `<span class="pchip num" style="--sc:${LCOR[o.lado] || "var(--kx)"}">${sg} ${o.n}${senView === "2027" && d ? ` (${d > 0 ? "+" : ""}${d})` : ""}</span>`; }).join("");
   $("espectroNote").innerHTML = `Placar provisório: conta quem está entre os ${S[0]?.vagas ?? 2} mais votados de cada UF agora. Média de ${pf(media, 1)} das seções totalizadas nas UFs; dado mais recente às ${ultima}. `
+    + (SA.length ? `Senado hoje: dados abertos do Senado Federal, versão de ${D.senadoAtual.versao}, com o partido atual de cada senador (inclui suplentes em exercício). ` : "")
     + `Classificação usada: ${LADOS.map(([k, n]) => `<strong>${n}</strong>: ${(D.espectro?.[k] || []).join(", ")}`).join(". ")}.`;
 }
 
@@ -650,6 +686,7 @@ function renderSenCards() {
         <div class="val num">${pf(c.p)}<small>${nf.format(c.vap)}</small></div>
         <div class="meta"><span class="tag">${c.n} · ${c.sg}</span><span class="tag">${LNOME[c.lado]}</span><span>${c.st === "eleito" ? "<strong>Eleito</strong>" : "Lidera"}</span></div>
       </div>`).join("")}
+      ${(() => { const h = SA.filter(x => x.uf === u.uf && x.fim === 2027); return h.length ? `<div class="hoje">Hoje nessas vagas: ${h.map(x => `${x.nome} (${x.sg})`).join(", ")}</div>` : ""; })()}
       ${prox ? `<div class="next num">Próximo: ${prox.nmu} (${prox.sg}, ${LNOME[prox.lado].toLowerCase()}) com ${pf(prox.p)}, a ${(ult.p - prox.p).toFixed(2).replace(".", ",")} pp da última vaga.</div>` : ""}
     </article>`;
   }).join("") || `<p style="color:var(--fg2)">Nenhuma UF corresponde ao filtro.</p>`;

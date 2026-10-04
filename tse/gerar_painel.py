@@ -129,6 +129,38 @@ def geometria():
     return saida
 
 
+SENADO_API = "https://legis.senado.leg.br/dadosabertos/senador/lista/atual.json"
+
+
+def senado_atual():
+    """Senadores em exercício (dados abertos do Senado), com partido e fim do mandato.
+
+    Guarda a última resposta em tse/.cache para seguir funcionando se a API falhar.
+    """
+    local = CACHE / "senado-atual.json"
+    try:
+        bruto = baixar(SENADO_API)
+        json.loads(bruto)
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_bytes(bruto)
+    except Exception:
+        if not local.exists():
+            return None
+        bruto = local.read_bytes()
+    d = json.loads(bruto)["ListaParlamentarEmExercicio"]
+    lista = []
+    for p in d["Parlamentares"]["Parlamentar"]:
+        i, m = p["IdentificacaoParlamentar"], p["Mandato"]
+        sg = i.get("SiglaPartidoParlamentar") or "S/Partido"
+        lista.append({
+            "nome": i["NomeParlamentar"], "sg": sg, "uf": m["UfParlamentar"],
+            "fim": int(m["SegundaLegislaturaDoMandato"]["DataFim"][:4]),
+            "lado": ESPECTRO_DE.get(sg.upper(), "sem"),
+            "titular": m.get("DescricaoParticipacao") == "Titular",
+        })
+    return {"versao": d["Metadados"]["Versao"], "lista": sorted(lista, key=lambda x: (x["uf"], x["nome"]))}
+
+
 def arquivo(uf):
     return f"{BASE}/dados/{uf}/{uf}-c{CARGO}-e{ELEICAO}-u.json"
 
@@ -175,6 +207,7 @@ def main():
         ],
         "espectro": ESPECTRO,
         "geo": geometria(),
+        "senadoAtual": senado_atual(),
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 

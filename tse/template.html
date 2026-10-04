@@ -142,7 +142,33 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
 .duel { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--track); margin: 0.4rem 0; }
 .duel i { display: block; height: 100%; }
 
-.tabs { display: flex; gap: 0.5rem; padding-top: 1rem; }
+.rkpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
+.rk { border: 1px solid var(--line); border-radius: 10px; padding: 0.75rem 0.9rem; display: grid; gap: 0.15rem; align-content: start; min-width: 0; }
+.rk .big { font-family: var(--f-display); font-weight: 700; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.rk .small { font-size: 0.75rem; color: var(--fg2); }
+.rk.alert { border-color: color-mix(in srgb, var(--warn) 55%, transparent); background: color-mix(in srgb, var(--warn) 7%, transparent); }
+.rk.alert .big { color: var(--warn); }
+.chartbox { overflow-x: auto; }
+.chartbox svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.chart-h { font-size: 0.95rem; margin: 1.25rem 0 0.25rem; }
+.chart-note { font-size: 0.75rem; color: var(--fg2); margin-top: 0.5rem; }
+.ch-grid { stroke: var(--line); stroke-width: 1; }
+.ch-axis { font-family: var(--f-mono); font-size: 10px; fill: var(--fg2); }
+.ch-ref { stroke: var(--fg); stroke-width: 1.2; stroke-dasharray: 5 4; opacity: 0.55; }
+.ch-ref-l { font-family: var(--f-mono); font-size: 10px; fill: var(--fg2); }
+.ch-line { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.ch-area { opacity: 0.1; }
+.ch-dot { stroke: var(--card); stroke-width: 1.5; }
+.ch-end { font-family: var(--f-display); font-weight: 700; font-size: 12px; }
+.ch-band { fill: var(--warn); opacity: 0.13; }
+.ch-step { fill: none; stroke: var(--fg2); stroke-width: 2; stroke-dasharray: 2 3; }
+.surges { display: grid; gap: 0.4rem; margin-top: 0.85rem; font-size: 0.82rem; }
+.surge { border-left: 3px solid var(--warn); padding: 0.2rem 0.7rem; background: color-mix(in srgb, var(--warn) 6%, transparent); border-radius: 0 6px 6px 0; }
+table.stale { min-width: 680px; }
+.st-chip { font-family: var(--f-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 4px; padding: 0.1rem 0.45rem; color: var(--sc); background: color-mix(in srgb, var(--sc) 13%, transparent); }
+
+.tabs { display: flex; gap: 0.5rem; padding-top: 1rem; overflow-x: auto; scrollbar-width: none; }
+.tab { flex: 0 0 auto; }
 .tab { font-family: var(--f-display); font-weight: 600; font-size: 0.9rem; border-radius: 999px; padding: 0.45rem 1.2rem; border: 1px solid rgba(255,255,255,0.16); background: transparent; color: var(--head-fg2); cursor: pointer; }
 .tab:hover { color: var(--head-fg); }
 .tab[aria-selected="true"] { background: var(--head-fg); color: var(--head); border-color: var(--head-fg); }
@@ -212,6 +238,7 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
   <nav class="wrap tabs" role="tablist" aria-label="Cargo">
     <button class="tab" role="tab" id="tabBtn-presidente" data-tab="presidente" type="button">Presidente</button>
     <button class="tab" role="tab" id="tabBtn-validos" data-tab="validos" type="button">Votos válidos</button>
+    <button class="tab" role="tab" id="tabBtn-ritmo" data-tab="ritmo" type="button">Ritmo</button>
     <button class="tab" role="tab" id="tabBtn-senado" data-tab="senado" type="button">Senado</button>
   </nav>
 </header>
@@ -288,6 +315,41 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
       </section>
       <aside class="card" aria-label="Maioria absoluta" id="valSide"></aside>
     </div>
+  </div>
+
+  <div class="wrap stack" id="tab-ritmo" role="tabpanel" aria-labelledby="tabBtn-ritmo" hidden>
+    <section class="card fade" aria-labelledby="trendTitle">
+      <div class="section-title">
+        <h2 id="trendTitle">Flávio × Lula ao longo da apuração</h2>
+        <div class="filters" id="xMode" role="group" aria-label="Eixo horizontal"></div>
+      </div>
+      <div class="rkpis" id="trendKpis"></div>
+      <div class="chartbox" id="chartPct"></div>
+      <h3 class="chart-h">Votos acumulados</h3>
+      <div class="chartbox" id="chartVotos"></div>
+      <p class="chart-note" id="trendNote"></p>
+    </section>
+
+    <section class="card" aria-labelledby="paceTitle">
+      <div class="section-title">
+        <h2 id="paceTitle">Ritmo da apuração</h2>
+        <span class="label" id="paceClock"></span>
+      </div>
+      <div class="rkpis" id="paceKpis"></div>
+      <div class="chartbox" id="chartPace"></div>
+      <div class="surges" id="surges"></div>
+    </section>
+
+    <section class="card" aria-labelledby="staleTitle">
+      <div class="section-title">
+        <h2 id="staleTitle">Tempo sem atualizar, por UF</h2>
+        <span class="label" id="staleSub">Presidente · tempo contado no seu relógio</span>
+      </div>
+      <div class="tablebox"><table class="stale">
+        <thead><tr><th>UF</th><th class="r">Totalizadas</th><th class="r">Última atualização</th><th class="r">Parada há</th><th class="r">Maior pausa vista</th><th class="r">Ritmo (10 min)</th><th>Situação</th></tr></thead>
+        <tbody id="staleBody"></tbody>
+      </table></div>
+    </section>
   </div>
 
   <div class="wrap stack" id="tab-senado" role="tabpanel" aria-labelledby="tabBtn-senado" hidden>
@@ -612,6 +674,162 @@ $("srcLine").innerHTML = `Fonte: Tribunal Superior Eleitoral, <a href="${D.fonte
 
 setScope("BR");
 
+/* ---------- Ritmo e tendência ---------- */
+const H = (D.historico || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+const tms = t => Date.parse(t + "-03:00");
+const hm = ms => new Date(ms).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+const hms = ms => new Date(ms).toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const mins = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")} min`; };
+const pp = x => (x > 0 ? "+" : "") + x.toFixed(2).replace(".", ",");
+let xMode = "hora";
+
+function niceTicks(lo, hi, n) {
+  const step0 = (hi - lo) / n, mag = 10 ** Math.floor(Math.log10(step0)), err = step0 / mag;
+  const step = (err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1) * mag;
+  const out = []; for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(+v.toFixed(10)); return out;
+}
+
+// Gráfico de linhas em SVG: séries [{nome, cor, pts:[[x,y]]}], refs [{y, label}], bands [[x0,x1]], step {pts}.
+function lineChart({ series, xDom, yDom, yFmt, xFmt, xTicks, refs = [], bands = [], step = null, h = 260 }) {
+  const W = 760, L = 52, R = 150, T = 14, B = 30, iw = W - L - R, ih = h - T - B;
+  const X = x => L + (x - xDom[0]) / (xDom[1] - xDom[0] || 1) * iw;
+  const Y = y => T + (1 - (y - yDom[0]) / (yDom[1] - yDom[0] || 1)) * ih;
+  let g = "";
+  niceTicks(yDom[0], yDom[1], 4).forEach(v => { g += `<line class="ch-grid" x1="${L}" x2="${L + iw}" y1="${Y(v)}" y2="${Y(v)}"/><text class="ch-axis" x="${L - 6}" y="${Y(v) + 3}" text-anchor="end">${yFmt(v)}</text>`; });
+  xTicks.forEach(v => { g += `<text class="ch-axis" x="${X(v)}" y="${T + ih + 18}" text-anchor="middle">${xFmt(v)}</text>`; });
+  bands.forEach(([a, b]) => { g += `<rect class="ch-band" x="${X(a)}" y="${T}" width="${Math.max(2, X(b) - X(a))}" height="${ih}"><title>Surto de apuração</title></rect>`; });
+  refs.forEach(r => { if (r.y >= yDom[0] && r.y <= yDom[1]) g += `<line class="ch-ref" x1="${L}" x2="${L + iw}" y1="${Y(r.y)}" y2="${Y(r.y)}"/><text class="ch-ref-l" x="${L + 4}" y="${Y(r.y) - 5}">${r.label}</text>`; });
+  if (step && step.pts.length) {
+    let d = `M${X(step.pts[0][0])},${Y(step.pts[0][1])}`;
+    step.pts.slice(1).forEach(([x, y]) => { d += `H${X(x)}V${Y(y)}`; });
+    d += `H${X(xDom[1])}`;
+    g += `<path class="ch-step" d="${d}"><title>${step.nome}</title></path><text class="ch-axis" x="${L + iw + 8}" y="${Y(step.pts[step.pts.length - 1][1]) + 3}">${step.nome}</text>`;
+  }
+  const ends = [];
+  series.forEach(s => {
+    if (!s.pts.length) return;
+    const d = s.pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("");
+    g += `<path class="ch-line" d="${d}" style="stroke:${s.cor}"/>`;
+    g += s.pts.map(([x, y]) => `<circle class="ch-dot" cx="${X(x).toFixed(1)}" cy="${Y(y).toFixed(1)}" r="3" style="fill:${s.cor}"><title>${s.nome}: ${yFmt(y, true)} · ${xFmt(x, true)}</title></circle>`).join("");
+    const [lx, ly] = s.pts[s.pts.length - 1];
+    ends.push({ y: Y(ly), x: X(lx), txt: `${s.nome} ${yFmt(ly, true)}`, cor: s.cor });
+  });
+  ends.sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].y < 15) e.y = arr[i - 1].y + 15; });
+  ends.forEach(e => { g += `<text class="ch-end" x="${e.x + 8}" y="${e.y + 4}" style="fill:${e.cor}">${e.txt}</text>`; });
+  return `<svg viewBox="0 0 ${W} ${h}" role="img">${g}</svg>`;
+}
+
+function surtos() {
+  // Ritmo em janelas de pelo menos 2 min; surto = ritmo ≥ 1,8× a mediana do dia.
+  const r = [];
+  for (let i = 1; i < H.length; i++) {
+    let j = i - 1; while (j > 0 && tms(H[i].t) - tms(H[j].t) < 120000) j--;
+    const dt = (tms(H[i].t) - tms(H[j].t)) / 60000; if (dt <= 0) continue;
+    r.push({ a: tms(H[j].t), b: tms(H[i].t), pa: H[j].pst, pb: H[i].pst, rate: (H[i].pst - H[j].pst) / dt });
+  }
+  const med = r.map(x => x.rate).sort((a, b) => a - b)[Math.floor(r.length / 2)] || 0;
+  const eps = [];
+  r.forEach(x => {
+    if (med <= 0 || x.rate < med * 1.8) return;
+    const last = eps[eps.length - 1];
+    if (last && x.a <= last.b) { last.b = Math.max(last.b, x.b); last.pb = Math.max(last.pb, x.pb); last.rate = Math.max(last.rate, x.rate); }
+    else eps.push({ ...x });
+  });
+  return { med, eps, rates: r };
+}
+
+function renderRitmo() {
+  if (H.length < 2) { $("trendKpis").innerHTML = `<p class="small">O histórico começa a se formar a partir da próxima atualização.</p>`; return; }
+  const [F, L] = ["22", "13"];
+  const curto = n => { const w = (META[n]?.nmu || n).split(" ")[0]; return w.charAt(0) + w.slice(1).toLowerCase(); };
+  const cor = { [F]: kc(F), [L]: kc(L) }, nome = { [F]: curto(F).replace("Flavio", "Flávio"), [L]: curto(L) };
+  const xs = p => xMode === "hora" ? tms(p.t) : p.pst;
+  const xDom = xMode === "hora" ? [tms(H[0].t), tms(H[H.length - 1].t)] : [Math.floor(H[0].pst / 5) * 5, Math.ceil(H[H.length - 1].pst / 5) * 5];
+  const xTicks = xMode === "hora" ? niceTicks(xDom[0] / 60000, xDom[1] / 60000, 6).filter(v => v % 5 === 0).map(v => v * 60000) : niceTicks(xDom[0], xDom[1], 6);
+  const xFmt = (x, long) => xMode === "hora" ? (long ? hms(x) : hm(x)) : (long ? `${pf(x, 1)} das seções` : `${Math.round(x)}%`);
+  $("xMode").innerHTML = [["hora", "Por horário"], ["pst", "Por % apurado"]].map(([k, n]) => `<button class="btn" type="button" data-x="${k}" aria-pressed="${xMode === k}">${n}</button>`).join("");
+  $("xMode").querySelectorAll(".btn").forEach(b => b.onclick = () => { xMode = b.dataset.x; renderRitmo(); });
+
+  const ys = H.flatMap(p => [p.p[F], p.p[L]]);
+  const yDom = [Math.floor(Math.min(...ys, 50) - 1), Math.ceil(Math.max(...ys, 50) + 1)];
+  $("chartPct").innerHTML = lineChart({
+    series: [F, L].map(n => ({ nome: nome[n], cor: cor[n], pts: H.map(p => [xs(p), p.p[n]]) })),
+    xDom, yDom, xTicks, xFmt, yFmt: (v, long) => long ? pf(v) : `${Math.round(v)}%`, refs: [{ y: 50, label: "50% dos válidos" }],
+  });
+  const vs = H.flatMap(p => [p.votos[F], p.votos[L]]);
+  $("chartVotos").innerHTML = lineChart({
+    series: [F, L].map(n => ({ nome: nome[n], cor: cor[n], pts: H.map(p => [xs(p), p.votos[n] / 1e6]) })),
+    xDom, yDom: [Math.floor(Math.min(...vs) / 1e6 / 5) * 5, Math.ceil(Math.max(...vs) / 1e6 / 5) * 5], xTicks, xFmt, h: 220,
+    yFmt: (v, long) => long ? `${v.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} mi` : `${Math.round(v)} mi`,
+  });
+  const a = H[0], z = H[H.length - 1];
+  const cruz = H.findIndex((p, i) => i && H[i - 1].p[F] >= 50 && p.p[F] < 50);
+  const dif = n => z.p[n] - a.p[n];
+  $("trendKpis").innerHTML = [
+    { t: nome[F], b: pf(z.p[F]), s: `${pp(dif(F))} pp desde ${hm(tms(a.t))} (${pf(a.p[F])})` },
+    { t: nome[L], b: pf(z.p[L]), s: `${pp(dif(L))} pp desde ${hm(tms(a.t))} (${pf(a.p[L])})` },
+    { t: "Diferença entre os dois", b: `${(z.p[F] - z.p[L]).toFixed(2).replace(".", ",")} pp`, s: `${nf.format(z.votos[F] - z.votos[L])} votos · era ${(a.p[F] - a.p[L]).toFixed(2).replace(".", ",")} pp` },
+    cruz > 0 ? { t: "Linha de 50%", b: hm(tms(H[cruz].t)), s: `${nome[F]} ficou abaixo de 50% com ${pf(H[cruz].pst, 1)} das seções` }
+             : { t: "Linha de 50%", b: z.p[F] >= 50 ? "Acima" : "Abaixo", s: `${nome[F]} com ${pf(z.p[F])} dos válidos` },
+  ].map(k => `<div class="rk"><span class="label">${k.t}</span><span class="big">${k.b}</span><span class="small">${k.s}</span></div>`).join("");
+  $("trendNote").textContent = `${H.length} capturas de ${hm(tms(a.t))} a ${hm(tms(z.t))}. Percentuais pela soma das UFs e do exterior, sobre os votos válidos. O histórico começa às ${hm(tms(a.t))}, quando o painel passou a guardar as capturas.`;
+
+  // Ritmo
+  const { med, eps } = surtos();
+  const of = []; H.forEach(p => { if (!of.length || of[of.length - 1][0] !== tms(p.oficial.t)) of.push([tms(p.oficial.t), p.oficial.pst]); });
+  const paceDom = [Math.floor(Math.min(...H.map(p => p.pst), ...of.map(o => o[1])) / 10) * 10, Math.min(100, Math.ceil(z.pst / 10) * 10 + 5)];
+  $("chartPace").innerHTML = lineChart({
+    series: [{ nome: "Soma das UFs", cor: "var(--accent)", pts: H.map(p => [tms(p.t), p.pst]) }],
+    step: { nome: "Arquivo nacional", pts: of.filter(o => o[0] >= tms(H[0].t) - 600000).map(([x, y]) => [Math.max(x, tms(H[0].t)), y]) },
+    xDom: [tms(H[0].t), tms(z.t)], yDom: paceDom, xTicks: niceTicks(tms(H[0].t) / 60000, tms(z.t) / 60000, 6).filter(v => v % 5 === 0).map(v => v * 60000),
+    xFmt: (x, long) => long ? hms(x) : hm(x), yFmt: (v, long) => long ? pf(v) : `${Math.round(v)}%`,
+    bands: eps.map(e => [e.a, e.b]), h: 240,
+  });
+  $("surges").innerHTML = eps.length ? eps.slice().reverse().map(e => `<div class="surge num"><strong>${hm(e.a)} a ${hm(e.b)}</strong>: ${pp(e.pb - e.pa)} pp de seções em ${mins(e.b - e.a)} · pico de ${e.rate.toFixed(2).replace(".", ",")} pp/min (${(e.rate / med).toFixed(1).replace(".", ",")}× o ritmo mediano)</div>`).join("")
+    : `<p class="small" style="color:var(--fg2)">Nenhum surto até agora. Surto = ritmo pelo menos 1,8 vez maior que o ritmo mediano, medido em janelas de 2 minutos.</p>`;
+  renderRelogio();
+}
+
+function renderRelogio() {
+  if (H.length < 2) return;
+  const agora = Date.now(), z = H[H.length - 1], { med } = surtos();
+  const ofT = tms(z.oficial.t), parado = agora - ofT;
+  const ofTs = [...new Set(H.map(p => tms(p.oficial.t)))].sort((a, b) => a - b);
+  let maiorOf = 0; ofTs.forEach((t, i) => { if (i) maiorOf = Math.max(maiorOf, t - ofTs[i - 1]); });
+  const ult10 = H.filter(p => tms(z.t) - tms(p.t) <= 600000), r10 = ult10.length > 1 ? (z.pst - ult10[0].pst) / ((tms(z.t) - tms(ult10[0].t)) / 60000) : 0;
+  const falta = 100 - z.pst, eta = r10 > 0 ? falta / r10 : null;
+  $("paceClock").textContent = `Agora: ${hms(agora)} (Brasília)`;
+  $("paceKpis").innerHTML = [
+    { t: "Arquivo nacional do TSE", b: `Parado há ${mins(parado)}`, s: `em ${pf(z.oficial.pst)} das seções desde ${hms(ofT)}`, alert: parado > 15 * 60000 },
+    { t: "Soma das UFs", b: pf(z.pst), s: `última atualização há ${mins(agora - tms(z.t))} (${hms(tms(z.t))})`, alert: agora - tms(z.t) > 10 * 60000 },
+    { t: "Ritmo nos últimos 10 min", b: `${r10.toFixed(2).replace(".", ",")} pp/min`, s: `mediana do dia ${med.toFixed(2).replace(".", ",")} pp/min${eta ? ` · nesse ritmo, 100% por volta de ${hm(tms(z.t) + eta * 60000)}` : ""}` },
+    { t: "Maior pausa do arquivo nacional", b: mins(Math.max(maiorOf, parado)), s: parado >= maiorOf ? "é a pausa atual" : "entre capturas deste painel" },
+  ].map(k => `<div class="rk ${k.alert ? "alert" : ""}"><span class="label">${k.t}</span><span class="big">${k.b}</span><span class="small">${k.s}</span></div>`).join("");
+
+  // Pausas só contam a partir de quando o painel passou a capturar sem buracos (intervalos ≤ 5 min).
+  let ini = 0; H.forEach((p, i) => { if (i && tms(p.t) - tms(H[i - 1].t) > 300000) ini = i; });
+  const Hc = H.slice(ini);
+  const rows = D.ufs.map(u => {
+    const vals = Hc.map(p => p.ufs?.[u.uf]).filter(Boolean);
+    const ts = [...new Set(vals.map(v => tms(v[0])))].sort((a, b) => a - b);
+    let maior = 0; ts.forEach((t, i) => { if (i) maior = Math.max(maior, t - ts[i - 1]); });
+    const last = tms(`${u.dg.split("/").reverse().join("-")}T${u.hg}`), parada = agora - last;
+    const v10 = vals.filter(v => tms(z.t) - tms(v[0]) <= 600000);
+    const rr = v10.length > 1 ? (v10[v10.length - 1][1] - v10[0][1]) / Math.max(1, (tms(v10[v10.length - 1][0]) - tms(v10[0][0])) / 60000) : 0;
+    return { u, last, parada, maior: Math.max(maior, u.pst >= 100 ? 0 : parada), rr };
+  }).sort((a, b) => b.parada - a.parada);
+  $("staleSub").textContent = `Presidente · pausas medidas desde ${hm(tms(Hc[0].t))} · tempo no seu relógio`;
+  $("staleBody").innerHTML = rows.map(r => {
+    const fim = r.u.pst >= 100, sc = fim ? "var(--ok)" : r.parada > 20 * 60000 ? "var(--k13)" : r.parada > 10 * 60000 ? "var(--warn)" : "var(--ok)";
+    const st = fim ? "Concluída" : r.parada > 20 * 60000 ? "Parada" : r.parada > 10 * 60000 ? "Lenta" : "Andando";
+    return `<tr><td class="mono">${r.u.uf}</td><td class="r"><span class="mini"><i style="width:${r.u.pst}%"></i></span>${pf(r.u.pst)}</td>
+      <td class="r">${hms(r.last)}</td><td class="r">${fim ? "—" : mins(r.parada)}</td><td class="r">${mins(r.maior)}</td>
+      <td class="r">${r.rr.toFixed(2).replace(".", ",")} pp/min</td><td><span class="st-chip" style="--sc:${sc}">${st}</span></td></tr>`;
+  }).join("");
+}
+renderRitmo();
+setInterval(renderRelogio, 15000);
+
 /* ---------- Senado ---------- */
 const S = D.senado || [];
 const LADOS = [["esquerda", "Esquerda", "var(--esq)"], ["centro", "Centro", "var(--cen)"], ["direita", "Direita", "var(--dir)"]];
@@ -715,17 +933,18 @@ function renderSenCards() {
 function setLado(l) { senLado = l; renderPlacar(); renderSenFilters(); renderSenCards(); }
 $("qs").oninput = renderSenCards;
 
-const TITLES = { presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", senado: "Apuração para o Senado Federal" };
+const TITLES = { presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", ritmo: "Ritmo e tendência da apuração", senado: "Apuração para o Senado Federal" };
 function setTab(t) {
   if (!S.length && t === "senado") t = "presidente";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
   $("tab-presidente").hidden = t !== "presidente";
   $("tab-senado").hidden = t !== "senado";
   $("tab-validos").hidden = t !== "validos";
+  $("tab-ritmo").hidden = t !== "ritmo";
   $("pageTitle").textContent = TITLES[t];
   store.set("tse-tab", t);
 }
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 if (S.length) setLado("todos");
-setTab(["#senado", "#presidente", "#validos"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
+setTab(["#senado", "#presidente", "#validos", "#ritmo"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
 </script>

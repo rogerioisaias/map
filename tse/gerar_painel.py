@@ -15,6 +15,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import historico
+
 RAIZ = "https://resultados.tse.jus.br/oficial/ele2026"
 BASE = f"{RAIZ}/6257"
 ELEICAO, CARGO = "006257", "0001"
@@ -212,6 +214,7 @@ def main():
         sen_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_senado(u))), ufs_sen)))
 
     nac = brutos["br"]
+    oficial = {**resumo(nac), "p": {c["n"]: round(c["p"], 4) for c in candidatos(nac) if c["n"] in historico.FOCO}}
     cands = candidatos(nac)
     for c in cands:
         c["foto"] = foto_b64("6257", "br", c["sq"])
@@ -241,6 +244,10 @@ def main():
         "senadoAtual": senado_atual(),
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
+
+    hist = historico.acrescentar(historico.carregar(), historico.ponto(dados["ufs"], oficial))
+    historico.salvar(hist)
+    dados["historico"] = hist
 
     html = (AQUI / "template.html").read_text(encoding="utf-8")
     html = html.replace("__DATA__", json.dumps(dados, ensure_ascii=False, separators=(",", ":")))

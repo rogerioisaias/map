@@ -205,6 +205,7 @@ footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); p
     </div>
     <div class="head-tools">
       <span class="pill status" id="statusPill"><span class="dot"></span><span id="statusTxt"></span></span>
+      <span class="pill" id="liveCount" hidden title="Pessoas com a página aberta agora, contando só contas Claude logadas. Visitantes do link público sem login não aparecem."></span>
       <button class="pill" id="themeBtn" type="button"></button>
     </div>
   </div>
@@ -576,6 +577,23 @@ $("themeBtn").onclick = () => {
   store.set("tse-theme", next); applyTheme(next);
 };
 applyTheme(store.get("tse-theme"));
+
+// Contador de quem está com a página aberta agora (só para o dono). Conta pessoas logadas no Claude;
+// visitantes do link público sem login não entram na sala. Cada republicação recarrega a página e
+// esvazia a sala, que volta a encher em poucos segundos.
+(async () => {
+  if (!window.claude?.use) return;
+  const [room, user] = await Promise.all([claude.use("room"), claude.use("user")]);
+  if (!room || !user || !(await user.isOwner().catch(() => false))) return;
+  const badge = $("liveCount");
+  const show = peers => {
+    const n = new Set(peers.filter(p => p.kind === "viewer").map(p => p.by || p.peer)).size;
+    badge.textContent = `👁 ${n} ${n === 1 ? "pessoa" : "pessoas"} agora`;
+    badge.hidden = false;
+  };
+  room.presence({ aba: "painel" }).catch(() => {});
+  room.onPeers(ch => show(ch.peers), () => { badge.hidden = true; });
+})();
 
 $("scopeSel").innerHTML = `<option value="BR">Brasil</option>` + D.ufs.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
   .map(u => `<option value="${u.uf}">${u.nome}</option>`).join("");

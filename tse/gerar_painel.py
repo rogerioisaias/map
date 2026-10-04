@@ -132,6 +132,18 @@ def geometria():
 
 
 DEP_CARGO = "0006"
+GOV_CARGO = "0003"
+REGIOES = {
+    "Norte": ["ac", "am", "ap", "pa", "ro", "rr", "to"],
+    "Nordeste": ["al", "ba", "ce", "ma", "pb", "pe", "pi", "rn", "se"],
+    "Centro-Oeste": ["df", "go", "ms", "mt"],
+    "Sudeste": ["es", "mg", "rj", "sp"],
+    "Sul": ["pr", "rs", "sc"],
+}
+
+
+def arquivo_governador(uf):
+    return f"{RAIZ}/{SENADO_ELEICAO}/dados/{uf}/{uf}-c{GOV_CARGO}-e00{SENADO_ELEICAO}-u.json"
 CAMARA_API = "https://dadosabertos.camara.leg.br/api/v2/deputados?itens=1000&ordem=ASC&ordenarPor=nome"
 SIGLA = {"PCDOB": "PCdoB", "PC DO B": "PCdoB"}
 
@@ -267,6 +279,7 @@ def main():
         ufs_sen = [u for u in UFS if u != "zz"]
         sen_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_senado(u))), ufs_sen)))
         dep_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_deputados(u))), ufs_sen)))
+        gov_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_governador(u))), ufs_sen)))
 
     nac = brutos["br"]
     oficial = {**resumo(nac), "p": {c["n"]: round(c["p"], 4) for c in candidatos(nac) if c["n"] in historico.FOCO}}
@@ -299,6 +312,8 @@ def main():
         "senadoAtual": senado_atual(),
         "camara": [deputados(uf, UFS[uf], d) for uf, d in dep_brutos.items()],
         "camaraAtual": camara_atual(),
+        "governadores": [{**senado(uf, UFS[uf], d), "regiao": next(r for r, us in REGIOES.items() if uf in us)}
+                         for uf, d in gov_brutos.items()],
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 
@@ -318,7 +333,8 @@ def main():
           f" [{b['st']} seções]"
           f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}"
           f" [{sum(u['st'] for u in dados['senado'])} seções]"
-          f"  |  Câmara: {max(u['hg'] for u in dados['camara'])} [{sum(u['st'] for u in dados['camara'])} seções]")
+          f"  |  Câmara: {max(u['hg'] for u in dados['camara'])} [{sum(u['st'] for u in dados['camara'])} seções]"
+          f"  |  Governador: {max(u['hg'] for u in dados['governadores'])} [{sum(u['st'] for u in dados['governadores'])} seções]")
 
 
 if __name__ == "__main__":

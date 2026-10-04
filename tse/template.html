@@ -256,6 +256,7 @@ table.camtbl { min-width: 720px; }
     <button class="tab" role="tab" id="tabBtn-validos" data-tab="validos" type="button">Votos válidos</button>
     <button class="tab" role="tab" id="tabBtn-ritmo" data-tab="ritmo" type="button">Ritmo</button>
     <button class="tab" role="tab" id="tabBtn-senado" data-tab="senado" type="button">Senado</button>
+    <button class="tab" role="tab" id="tabBtn-gov" data-tab="gov" type="button">Governadores</button>
     <button class="tab" role="tab" id="tabBtn-camara" data-tab="camara" type="button">Câmara</button>
   </nav>
 </header>
@@ -367,6 +368,30 @@ table.camtbl { min-width: 720px; }
         <tbody id="staleBody"></tbody>
       </table></div>
     </section>
+  </div>
+
+  <div class="wrap stack" id="tab-gov" role="tabpanel" aria-labelledby="tabBtn-gov" hidden>
+    <section class="card fade" aria-labelledby="govTitle">
+      <div class="section-title">
+        <h2 id="govTitle">Governadores</h2>
+        <span class="label" id="govSub"></span>
+      </div>
+      <div class="filters placar-view" id="govReg" role="group" aria-label="Região"></div>
+      <div class="rkpis" id="govKpis"></div>
+      <div class="placar" id="govPlacar"></div>
+    </section>
+
+    <section class="card" aria-labelledby="govUfTitle">
+      <div class="section-title">
+        <h2 id="govUfTitle">Disputa em cada UF</h2>
+        <div class="head-tools">
+          <div class="filters" id="govSt" role="group" aria-label="Situação"></div>
+          <input type="search" id="qg" placeholder="Filtrar por UF, candidato ou partido" aria-label="Filtrar governadores">
+        </div>
+      </div>
+      <div class="ufcards" id="govCards"></div>
+    </section>
+    <p class="note" id="govNote"></p>
   </div>
 
   <div class="wrap stack" id="tab-camara" role="tabpanel" aria-labelledby="tabBtn-camara" hidden>
@@ -976,7 +1001,7 @@ function renderSenCards() {
 function setLado(l) { senLado = l; renderPlacar(); renderSenFilters(); renderSenCards(); }
 $("qs").oninput = renderSenCards;
 
-const TITLES = { camara: "Placar da Câmara dos Deputados", presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", ritmo: "Ritmo e tendência da apuração", senado: "Apuração para o Senado Federal" };
+const TITLES = { gov: "Apuração para Governador", camara: "Placar da Câmara dos Deputados", presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", ritmo: "Ritmo e tendência da apuração", senado: "Apuração para o Senado Federal" };
 function setTab(t) {
   if (!S.length && t === "senado") t = "presidente";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
@@ -985,6 +1010,7 @@ function setTab(t) {
   $("tab-validos").hidden = t !== "validos";
   $("tab-ritmo").hidden = t !== "ritmo";
   $("tab-camara").hidden = t !== "camara";
+  $("tab-gov").hidden = t !== "gov";
   $("pageTitle").textContent = TITLES[t];
   store.set("tse-tab", t);
 }
@@ -1050,5 +1076,61 @@ function renderCamTable() {
 }
 $("qc").oninput = renderCamTable;
 renderCamara();
-setTab(["#senado", "#presidente", "#validos", "#ritmo", "#camara"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
+
+/* ---------- Governadores ---------- */
+const G2 = D.governadores || [];
+const REGS = ["Norte", "Nordeste", "Centro-Oeste", "Sudeste", "Sul"];
+let govReg = "todas", govSt = "todas";
+function govSituacao(u) {
+  const [a] = u.cands;
+  if (a.eleito) return { k: "eleito", t: "Eleito no 1º turno", c: "var(--ok)" };
+  if (u.final) return { k: "segundo", t: "2º turno", c: "var(--warn)" };
+  return a.p > 50 ? { k: "vence", t: "Vence no 1º turno se mantiver", c: "var(--accent)" } : { k: "segundo", t: "2º turno provável", c: "var(--warn)" };
+}
+function renderGov() {
+  if (!G2.length) return;
+  $("govReg").innerHTML = [["todas", "Todas as regiões"], ...REGS.map(r => [r, r])].map(([k, n]) => `<button class="btn" type="button" data-r="${k}" aria-pressed="${govReg === k}">${n}</button>`).join("");
+  $("govReg").querySelectorAll(".btn").forEach(b => b.onclick = () => { govReg = b.dataset.r; renderGov(); });
+  const us = G2.filter(u => govReg === "todas" || u.regiao === govReg);
+  const sit = us.map(govSituacao);
+  const cnt = k => sit.filter(s => s.k === k).length;
+  const media = us.reduce((a, u) => a + u.pst, 0) / (us.length || 1);
+  $("govSub").textContent = `${us.length} UFs · média de ${pf(media, 1)} das seções totalizadas`;
+  $("govKpis").innerHTML = [
+    { t: "Eleitos no 1º turno", b: cnt("eleito"), s: "definidos pelo TSE" },
+    { t: "Acima de 50% agora", b: cnt("vence"), s: "venceriam no 1º turno se mantiverem" },
+    { t: "Rumo ao 2º turno", b: cnt("segundo"), s: "líder abaixo de 50% dos válidos" },
+  ].map(k => `<div class="rk"><span class="label">${k.t}</span><span class="big">${k.b}</span><span class="small">${k.s}</span></div>`).join("");
+  $("govPlacar").innerHTML = LADOS.map(([k, nome, cor]) => {
+    const g = us.filter(u => u.cands[0].lado === k);
+    return `<div class="side" style="--sc:${cor};cursor:default"><div class="t">${nome}</div><div class="n num">${g.length}</div>
+      <div class="d">${g.length ? g.map(u => u.uf).join(" · ") : "nenhuma UF"}</div></div>`;
+  }).join("") + `<div class="marcos" style="grid-column:1/-1">Lado do candidato que lidera em cada UF, pela classificação de partidos usada no painel.</div>`;
+  $("govSt").innerHTML = [["todas", "Todas"], ["eleito", "Eleitos"], ["vence", "Acima de 50%"], ["segundo", "2º turno"]].map(([k, n]) => `<button class="btn" type="button" data-s="${k}" aria-pressed="${govSt === k}">${n}</button>`).join("");
+  $("govSt").querySelectorAll(".btn").forEach(b => b.onclick = () => { govSt = b.dataset.s; renderGov(); });
+  renderGovCards();
+  $("govNote").textContent = "Percentuais sobre os votos válidos. Vence no 1º turno quem tem mais da metade dos válidos (art. 77, § 2º, aplicado aos governadores pelo art. 28 da Constituição). Fotos e números: TSE.";
+}
+function renderGovCards() {
+  const q = $("qg").value.trim().toLowerCase();
+  $("govCards").innerHTML = G2.filter(u => (govReg === "todas" || u.regiao === govReg) && (govSt === "todas" || govSituacao(u).k === govSt)
+      && (!q || [u.uf, u.nome, ...u.cands.slice(0, 3).flatMap(c => [c.nmu, c.sg])].join(" ").toLowerCase().includes(q)))
+    .sort((a, b) => REGS.indexOf(a.regiao) - REGS.indexOf(b.regiao) || a.nome.localeCompare(b.nome, "pt-BR")).map(u => {
+      const s = govSituacao(u), [a, b] = u.cands;
+      return `<article class="ufcard">
+        <header><h3><span>${u.nome}</span><span class="mono" style="color:var(--fg2);font-size:.8rem">${u.uf} · ${u.regiao}</span></h3>
+          <div class="small num" style="font-size:.72rem;color:var(--fg2)"><span class="mini"><i style="width:${u.pst}%"></i></span>${pf(u.pst)} totalizadas · ${u.hg}</div>
+          <span class="st-chip" style="--sc:${s.c};justify-self:start">${s.t}</span></header>
+        ${[a, b].filter(Boolean).map(c => `<div class="seatrow" style="--sc:${LCOR[c.lado] || "var(--kx)"}">
+          ${senAvatar(c)}<div class="who">${c.nmu}</div>
+          <div class="val num">${pf(c.p)}<small>${nf.format(c.vap)}</small></div>
+          <div class="meta"><span class="tag">${c.n} · ${c.sg}</span><span class="tag">${LNOME[c.lado] || ""}</span>${c.vice ? `<span>Vice: ${c.vice}</span>` : ""}</div>
+        </div>`).join("")}
+        ${b ? `<div class="next num">Diferença: ${(a.p - b.p).toFixed(2).replace(".", ",")} pp · ${nf.format(a.vap - b.vap)} votos</div>` : ""}
+      </article>`;
+    }).join("") || `<p style="color:var(--fg2)">Nenhuma UF corresponde ao filtro.</p>`;
+}
+$("qg").oninput = renderGovCards;
+renderGov();
+setTab(["#senado", "#presidente", "#validos", "#ritmo", "#camara", "#gov"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
 </script>

@@ -1,56 +1,64 @@
 <title>Apuração Eleições 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:ital,wght@0,400..700;1,400..600&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: cabeçalho escuro de painel; 2 colunas (ranking | sidebar de totais), depois mapa em mosaico + tabela por UF. */
+/* Marca pessoal Rogério Isaias: marinho #0f376a, azul #0c69be, azul-claro #64b4d7, névoa #f4f9fd, destaque âmbar #fba100;
+   Inter Tight + JetBrains Mono. Layout: cabeçalho com a faixa da marca; 2 colunas (ranking | totais); cartões de 16px. */
 :root {
-  --bg: #F5F7FA; --card: #FFFFFF; --hover: #F0F4F8; --line: rgba(0,0,0,0.08); --track: #E8EDF3;
-  --fg: #1A2332; --fg2: #4A5E78; --accent: #1565C0; --accent2: #0D47A1;
-  --ok: #2E7D32; --warn: #E65100; --head: #0F172A; --head-fg: #E8EDF4; --head-fg2: #94A3B8;
+  --bg: #F4F9FD; --card: #FFFFFF; --hover: #EAF3FA; --line: rgba(100,180,215,0.45); --track: #E1EEF7;
+  --fg: #0F376A; --fg2: #2058A2; --accent: #0C69BE; --accent2: #0F376A; --destaque: #FBA100;
+  --ok: #2E7D32; --warn: #C76A00;
+  --head: linear-gradient(104deg, #0F376A 0%, #0F376A 44%, #2058A2 70%, #0C69BE 88%, #FBA100 100%);
+  --head-fg: #F4F9FD; --head-fg2: #64B4D7; --sombra: 0 1px 2px rgba(15,55,106,.06), 0 1px 1px rgba(15,55,106,.10);
   --esq: #C62828; --cen: #B7791F; --dir: #1565C0;
-  --k22: #1565C0; --k13: #C62828; --k70: #E65100; --k55: #2E7D32; --k14: #6A1B9A; --k30: #00838F; --kx: #78909C;
-  --f-display: "Poppins", "Segoe UI", system-ui, sans-serif;
-  --f-body: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --k22: #1565C0; --k13: #C62828; --k70: #E65100; --k55: #2E7D32; --k14: #6A1B9A; --k30: #00838F; --kx: #638A96;
+  --f-display: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --f-body: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --esq: #EF6461; --cen: #E3B04B; --dir: #5C9DF0; --bg: #0F1419; --card: #151C28; --hover: #1A2332; --line: rgba(255,255,255,0.08); --track: #232D3D;
-  --fg: #E8EDF4; --fg2: #94A3B8; --accent: #64B5F6; --accent2: #90CAF9; --ok: #66BB6A; --warn: #FFA726;
-  --head: #0B0F14; --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #9AAAB6;
+  --bg: #08182F; --card: #0D2443; --hover: #12305A; --line: rgba(100,180,215,0.20); --track: #173A66;
+  --fg: #F4F9FD; --fg2: #9CC9E3; --accent: #64B4D7; --accent2: #A9D6EC; --destaque: #FBA100; --ok: #66BB6A; --warn: #FFB75D;
+  --head: linear-gradient(104deg, #061428 0%, #0B2A52 50%, #154785 82%, #FBA100 100%); --sombra: 0 1px 2px rgba(0,0,0,.3);
+  --esq: #EF6461; --cen: #E3B04B; --dir: #5C9DF0;
+  --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #8FB0BA;
   color-scheme: dark;
 } }
 :root[data-theme="dark"] {
-  --esq: #EF6461; --cen: #E3B04B; --dir: #5C9DF0; --bg: #0F1419; --card: #151C28; --hover: #1A2332; --line: rgba(255,255,255,0.08); --track: #232D3D;
-  --fg: #E8EDF4; --fg2: #94A3B8; --accent: #64B5F6; --accent2: #90CAF9; --ok: #66BB6A; --warn: #FFA726;
-  --head: #0B0F14; --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #9AAAB6;
+  --bg: #08182F; --card: #0D2443; --hover: #12305A; --line: rgba(100,180,215,0.20); --track: #173A66;
+  --fg: #F4F9FD; --fg2: #9CC9E3; --accent: #64B4D7; --accent2: #A9D6EC; --destaque: #FBA100; --ok: #66BB6A; --warn: #FFB75D;
+  --head: linear-gradient(104deg, #061428 0%, #0B2A52 50%, #154785 82%, #FBA100 100%); --sombra: 0 1px 2px rgba(0,0,0,.3);
+  --esq: #EF6461; --cen: #E3B04B; --dir: #5C9DF0;
+  --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #8FB0BA;
   color-scheme: dark;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.7; }
-h1, h2, h3 { font-family: var(--f-display); line-height: 1.2; text-wrap: balance; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.2; text-wrap: balance; font-weight: 600; font-stretch: 110%; letter-spacing: -0.014em; }
+.wordmark { font-family: var(--f-display); font-weight: 500; font-stretch: 118%; letter-spacing: 0.2em; text-transform: uppercase; font-size: 0.78rem; color: var(--head-fg); }
 a { color: var(--accent); }
 .num { font-variant-numeric: tabular-nums; }
 .mono { font-family: var(--f-mono); }
-.label { font-family: var(--f-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg2); }
+.label { font-family: var(--f-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--fg2); }
 
 header { background: var(--head); color: var(--head-fg); padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 16px 1.25rem; }
 .wrap { max-width: 1200px; margin: 0 auto; }
 .head-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
-header h1 { font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 800; }
+header h1 { font-size: clamp(1.4rem, 3vw, 2rem); font-weight: 600; letter-spacing: -0.022em; }
 header .sub { color: var(--head-fg2); font-size: 0.85rem; }
 .head-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .pill { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.4rem 0.85rem; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: var(--head-fg); cursor: pointer; transition: background .2s; white-space: nowrap; }
 .pill:hover { background: rgba(255,255,255,0.14); }
 .pill:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .status { display: inline-flex; align-items: center; gap: 0.45rem; cursor: default; }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: #FFA726; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--destaque); }
 .status.final .dot { background: #66BB6A; }
 
 main { padding: 1.5rem 16px 3rem; }
 .grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.25rem; align-items: start; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem; min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 1.5rem; min-width: 0; box-shadow: var(--sombra); }
 .stack { display: grid; gap: 1.25rem; }
 
 .scope-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
@@ -59,7 +67,7 @@ select, input[type="search"] { font-family: var(--f-body); font-size: 0.85rem; c
 .btn { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.45rem 0.9rem; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
 .btn:hover { background: var(--hover); }
 
-.verdict { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); padding: 0.85rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+.verdict { border-left: 3px solid var(--destaque); background: color-mix(in srgb, var(--accent) 7%, transparent); padding: 0.85rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
 .verdict strong { font-family: var(--f-display); }
 
 .cand { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 0.25rem 0.85rem; align-items: center; padding: 0.7rem 0; border-top: 1px solid var(--line); }
@@ -171,7 +179,7 @@ table.stale { min-width: 680px; }
 .tab { flex: 0 0 auto; }
 .tab { font-family: var(--f-display); font-weight: 600; font-size: 0.9rem; border-radius: 999px; padding: 0.45rem 1.2rem; border: 1px solid rgba(255,255,255,0.16); background: transparent; color: var(--head-fg2); cursor: pointer; }
 .tab:hover { color: var(--head-fg); }
-.tab[aria-selected="true"] { background: var(--head-fg); color: var(--head); border-color: var(--head-fg); }
+.tab[aria-selected="true"] { background: #F4F9FD; color: #0F376A; border-color: var(--destaque); box-shadow: inset 0 -2px 0 var(--destaque); }
 .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .placar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1.25rem; }
@@ -232,6 +240,7 @@ table.camtbl { min-width: 720px; }
 <header>
   <div class="wrap head-row">
     <div>
+      <div class="wordmark">Rogério Isaias</div>
       <div class="label" style="color:var(--head-fg2)">TSE · Eleição Ordinária Federal 2026 · 1º turno</div>
       <h1 id="pageTitle">Apuração para Presidente da República</h1>
       <div class="sub" id="headSub"></div>

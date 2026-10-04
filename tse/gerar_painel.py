@@ -131,6 +131,60 @@ def geometria():
     return saida
 
 
+DEP_CARGO = "0006"
+CAMARA_API = "https://dadosabertos.camara.leg.br/api/v2/deputados?itens=1000&ordem=ASC&ordenarPor=nome"
+SIGLA = {"PCDOB": "PCdoB", "PC DO B": "PCdoB"}
+
+
+def sigla(sg):
+    return SIGLA.get(sg.upper(), sg)
+
+
+def arquivo_deputados(uf):
+    return f"{RAIZ}/{SENADO_ELEICAO}/dados/{uf}/{uf}-c{DEP_CARGO}-e00{SENADO_ELEICAO}-u.json"
+
+
+def deputados(uf, nome, d):
+    """Placar de Deputado Federal numa UF.
+
+    O TSE informa em `vag` quantas vagas cada partido ou federação leva com os votos já
+    totalizados (quociente eleitoral e sobras). Dentro de uma federação, as vagas vão aos
+    candidatos mais votados, e é assim que separo as vagas por partido.
+    """
+    c = d["carg"][0]
+    partidos = {}
+    for agr in c["agr"]:
+        vag = int(agr.get("vag") or 0)
+        if not vag:
+            continue
+        cands = sorted(((int(x["vap"] or 0), par["sg"]) for par in agr["par"] for x in par["cand"]), reverse=True)
+        for _, sg in cands[:vag]:
+            partidos[sigla(sg)] = partidos.get(sigla(sg), 0) + 1
+    return {"uf": uf.upper(), "nome": nome, "vagas": int(c.get("nv") or 0), "qe": int(c.get("qe") or 0),
+            **{k: v for k, v in resumo(d).items() if k in ("dg", "hg", "pst", "st", "ts", "final")},
+            "partidos": partidos}
+
+
+def camara_atual():
+    """Deputados em exercício por partido (dados abertos da Câmara), com cache em tse/.cache."""
+    local = CACHE / "camara-atual.json"
+    try:
+        bruto = baixar(CAMARA_API)
+        json.loads(bruto)
+        local.parent.mkdir(parents=True, exist_ok=True)
+        local.write_bytes(bruto)
+    except Exception:
+        if not local.exists():
+            return None
+        bruto = local.read_bytes()
+    lista = json.loads(bruto)["dados"]
+    por = {}
+    for x in lista:
+        sg = sigla(x.get("siglaPartido") or "S/Partido")
+        por[sg] = por.get(sg, 0) + 1
+    return {"total": len(lista), "partidos": por}
+
+
 SENADO_API = "https://legis.senado.leg.br/dadosabertos/senador/lista/atual.json"
 
 
@@ -212,6 +266,7 @@ def main():
         brutos = dict(zip(["br", *UFS], ex.map(lambda u: json.loads(baixar(arquivo(u))), ["br", *UFS])))
         ufs_sen = [u for u in UFS if u != "zz"]
         sen_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_senado(u))), ufs_sen)))
+        dep_brutos = dict(zip(ufs_sen, ex.map(lambda u: json.loads(baixar(arquivo_deputados(u))), ufs_sen)))
 
     nac = brutos["br"]
     oficial = {**resumo(nac), "p": {c["n"]: round(c["p"], 4) for c in candidatos(nac) if c["n"] in historico.FOCO}}
@@ -242,6 +297,8 @@ def main():
         "espectro": ESPECTRO,
         "geo": geometria(),
         "senadoAtual": senado_atual(),
+        "camara": [deputados(uf, UFS[uf], d) for uf, d in dep_brutos.items()],
+        "camaraAtual": camara_atual(),
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 
@@ -260,7 +317,8 @@ def main():
           f"{' (soma das UFs; arquivo nacional às ' + nac['hg'] + ')' if b['fonte'] == 'soma' else ''}"
           f" [{b['st']} seções]"
           f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}"
-          f" [{sum(u['st'] for u in dados['senado'])} seções]")
+          f" [{sum(u['st'] for u in dados['senado'])} seções]"
+          f"  |  Câmara: {max(u['hg'] for u in dados['camara'])} [{sum(u['st'] for u in dados['camara'])} seções]")
 
 
 if __name__ == "__main__":

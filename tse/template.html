@@ -188,6 +188,13 @@ table.stale { min-width: 680px; }
 .seat-key { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.78rem; color: var(--fg2); margin: 0.75rem 0 1rem; }
 .seat-key .seat { width: 11px; height: 11px; vertical-align: -1px; margin-right: 0.3rem; }
 .placar-view { margin-bottom: 1rem; }
+.seats-cam { grid-template-columns: repeat(38, minmax(0, 1fr)); gap: 2px; max-width: 760px; }
+.seats-cam .seat { border-width: 1px; }
+.spec { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--track); min-width: 140px; }
+.spec i { display: block; height: 100%; }
+table.camtbl { min-width: 720px; }
+.camtbl td:last-child { white-space: normal; font-size: 0.78rem; color: var(--fg2); }
+@media (max-width: 600px) { .seats-cam { grid-template-columns: repeat(27, minmax(0, 1fr)); } }
 .side .delta { font-family: var(--f-mono); font-size: 0.8rem; font-weight: 500; margin-left: 0.4rem; }
 .marcos { font-size: 0.78rem; color: var(--fg2); margin-top: -0.4rem; margin-bottom: 1rem; }
 .hoje { font-size: 0.72rem; color: var(--fg2); }
@@ -240,6 +247,7 @@ table.stale { min-width: 680px; }
     <button class="tab" role="tab" id="tabBtn-validos" data-tab="validos" type="button">Votos válidos</button>
     <button class="tab" role="tab" id="tabBtn-ritmo" data-tab="ritmo" type="button">Ritmo</button>
     <button class="tab" role="tab" id="tabBtn-senado" data-tab="senado" type="button">Senado</button>
+    <button class="tab" role="tab" id="tabBtn-camara" data-tab="camara" type="button">Câmara</button>
   </nav>
 </header>
 
@@ -350,6 +358,32 @@ table.stale { min-width: 680px; }
         <tbody id="staleBody"></tbody>
       </table></div>
     </section>
+  </div>
+
+  <div class="wrap stack" id="tab-camara" role="tabpanel" aria-labelledby="tabBtn-camara" hidden>
+    <section class="card fade" aria-labelledby="camTitle">
+      <div class="section-title">
+        <h2 id="camTitle">Placar da Câmara dos Deputados</h2>
+        <span class="label" id="camSub"></span>
+      </div>
+      <div class="filters placar-view" id="camView" role="group" aria-label="O que o placar mostra"></div>
+      <div class="placar" id="camPlacar"></div>
+      <div class="seats seats-cam" id="camSeats" role="img"></div>
+      <div class="parties" id="camParties" style="margin-top:1rem"></div>
+    </section>
+
+    <section class="card" aria-labelledby="camUfTitle">
+      <div class="section-title">
+        <h2 id="camUfTitle">Vagas projetadas por UF</h2>
+        <input type="search" id="qc" placeholder="Filtrar por UF ou partido" aria-label="Filtrar UFs da Câmara">
+      </div>
+      <div class="tablebox"><table class="camtbl">
+        <thead><tr><th>UF</th><th class="r">Totalizadas</th><th class="r">Vagas</th><th class="r">Quociente eleitoral</th><th>Esquerda · Centro · Direita</th><th>Maiores bancadas</th></tr></thead>
+        <tbody id="camBody"></tbody>
+      </table></div>
+    </section>
+
+    <p class="note" id="camNote"></p>
   </div>
 
   <div class="wrap stack" id="tab-senado" role="tabpanel" aria-labelledby="tabBtn-senado" hidden>
@@ -933,7 +967,7 @@ function renderSenCards() {
 function setLado(l) { senLado = l; renderPlacar(); renderSenFilters(); renderSenCards(); }
 $("qs").oninput = renderSenCards;
 
-const TITLES = { presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", ritmo: "Ritmo e tendência da apuração", senado: "Apuração para o Senado Federal" };
+const TITLES = { camara: "Placar da Câmara dos Deputados", presidente: "Apuração para Presidente da República", validos: "Presidente: só os votos válidos", ritmo: "Ritmo e tendência da apuração", senado: "Apuração para o Senado Federal" };
 function setTab(t) {
   if (!S.length && t === "senado") t = "presidente";
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === t));
@@ -941,10 +975,71 @@ function setTab(t) {
   $("tab-senado").hidden = t !== "senado";
   $("tab-validos").hidden = t !== "validos";
   $("tab-ritmo").hidden = t !== "ritmo";
+  $("tab-camara").hidden = t !== "camara";
   $("pageTitle").textContent = TITLES[t];
   store.set("tse-tab", t);
 }
 document.querySelectorAll(".tab").forEach(b => b.onclick = () => setTab(b.dataset.tab));
 if (S.length) setLado("todos");
-setTab(["#senado", "#presidente", "#validos", "#ritmo"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
+
+/* ---------- Câmara ---------- */
+const C = D.camara || [], CA = D.camaraAtual;
+const ESPDE = Object.fromEntries(Object.entries(D.espectro || {}).flatMap(([k, sgs]) => sgs.map(sg => [sg.toUpperCase(), k])));
+const ladoDe = sg => ESPDE[String(sg).toUpperCase()] || "sem";
+let camView = "proj";
+
+function camContagem(view) {
+  const por = {};
+  if (view === "hoje") Object.assign(por, CA?.partidos || {});
+  else C.forEach(u => Object.entries(u.partidos).forEach(([sg, n]) => { por[sg] = (por[sg] || 0) + n; }));
+  return por;
+}
+
+function renderCamara() {
+  if (!C.length) return;
+  const views = [["proj", "Projeção 2027"], ...(CA ? [["hoje", "Câmara hoje"]] : [])];
+  $("camView").innerHTML = views.map(([k, n]) => `<button class="btn" type="button" data-v="${k}" aria-pressed="${camView === k}">${n}</button>`).join("");
+  $("camView").querySelectorAll(".btn").forEach(b => b.onclick = () => { camView = b.dataset.v; renderCamara(); });
+  const por = camContagem(camView), hoje = camContagem("hoje");
+  const total = Object.values(por).reduce((a, b) => a + b, 0), vagas = C.reduce((a, u) => a + u.vagas, 0);
+  const media = C.reduce((a, u) => a + u.pst * u.vagas, 0) / (vagas || 1);
+  const lado = obj => { const r = { esquerda: 0, centro: 0, direita: 0, sem: 0 }; Object.entries(obj).forEach(([sg, n]) => { r[ladoDe(sg)] += n; }); return r; };
+  const L1 = lado(por), L0 = lado(hoje);
+  $("camSub").textContent = camView === "proj" ? `${total} de ${vagas} vagas projetadas · ${pf(media, 1)} das seções (média ponderada)` : `${total} deputados em exercício`;
+  $("camPlacar").innerHTML = LADOS.map(([k, nome, cor]) => {
+    const d = L1[k] - L0[k];
+    const delta = camView === "proj" && CA ? `<span class="delta" style="color:${d > 0 ? "var(--ok)" : d < 0 ? "var(--warn)" : "var(--fg2)"}">${d > 0 ? "+" : ""}${d}</span>` : "";
+    return `<div class="side" style="--sc:${cor};cursor:default"><div class="t">${nome}</div><div class="n num">${L1[k]}${delta}</div>
+      <div class="d num">${pf(L1[k] / (total || 1) * 100, 1)} das cadeiras${camView === "proj" && CA ? ` · hoje são ${L0[k]}` : ""}</div></div>`;
+  }).join("") + `<div class="marcos" style="grid-column:1/-1">Maioria absoluta: 257 deputados. Emenda constitucional: 308 (três quintos). ${(() => { const top = LADOS.map(([k, n]) => [n, L1[k]]).sort((a, b) => b[1] - a[1])[0]; return top[1] >= 308 ? `${top[0]} chega aos três quintos.` : top[1] >= 257 ? `${top[0]} tem maioria absoluta sozinha.` : "Nenhum lado tem maioria absoluta sozinho."; })()}${L1.sem ? ` ${L1.sem} sem classificação.` : ""}</div>`;
+  const ord = { esquerda: 0, centro: 1, direita: 2, sem: 3 };
+  const lista = Object.entries(por).sort((a, b) => ord[ladoDe(a[0])] - ord[ladoDe(b[0])] || b[1] - a[1]);
+  $("camSeats").innerHTML = lista.flatMap(([sg, n]) => Array.from({ length: n }, () => `<i class="seat" style="--sc:${LCOR[ladoDe(sg)]}" title="${sg}"></i>`)).join("");
+  $("camSeats").setAttribute("aria-label", LADOS.map(([k, n]) => `${n}: ${L1[k]}`).join(", "));
+  $("camParties").innerHTML = Object.entries(por).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([sg, n]) => {
+    const d = n - (hoje[sg] || 0);
+    return `<span class="pchip num" style="--sc:${LCOR[ladoDe(sg)]}">${sg} ${n}${camView === "proj" && CA && d ? ` (${d > 0 ? "+" : ""}${d})` : ""}</span>`;
+  }).join("") + (camView === "proj" && CA ? Object.keys(hoje).filter(sg => !por[sg]).map(sg => `<span class="pchip num" style="--sc:${LCOR[ladoDe(sg)]};opacity:.6">${sg} 0 (−${hoje[sg]})</span>`).join("") : "");
+  renderCamTable();
+  $("camNote").innerHTML = `Projeção do próprio TSE: em cada UF, o arquivo de resultados informa quantas vagas cada partido ou federação leva com os votos já totalizados (quociente eleitoral e sobras). As vagas mudam até o fim da apuração. Dentro de uma federação, as vagas vão aos candidatos mais votados, e é assim que o painel separa por partido. `
+    + (CA ? `Câmara hoje: dados abertos da Câmara dos Deputados, com o partido atual de cada deputado em exercício. ` : "")
+    + `Classificação de espectro igual à do Senado.`;
+}
+
+function renderCamTable() {
+  const q = $("qc").value.trim().toLowerCase();
+  $("camBody").innerHTML = C.filter(u => !q || [u.uf, u.nome, ...Object.keys(u.partidos)].join(" ").toLowerCase().includes(q))
+    .sort((a, b) => b.vagas - a.vagas || a.nome.localeCompare(b.nome, "pt-BR")).map(u => {
+      const r = { esquerda: 0, centro: 0, direita: 0, sem: 0 }; Object.entries(u.partidos).forEach(([sg, n]) => { r[ladoDe(sg)] += n; });
+      const t = Object.values(r).reduce((a, b) => a + b, 0) || 1;
+      const top = Object.entries(u.partidos).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([sg, n]) => `${sg} ${n}`).join(" · ");
+      return `<tr><td class="mono">${u.uf}</td><td class="r"><span class="mini"><i style="width:${u.pst}%"></i></span>${pf(u.pst)}</td>
+        <td class="r">${u.vagas}</td><td class="r">${nf.format(u.qe)}</td>
+        <td><div class="spec" title="Esquerda ${r.esquerda} · Centro ${r.centro} · Direita ${r.direita}">${LADOS.map(([k, , c]) => `<i style="width:${r[k] / t * 100}%;background:${c}"></i>`).join("")}</div>
+          <span class="mono" style="font-size:.68rem;color:var(--fg2)">${r.esquerda} · ${r.centro} · ${r.direita}</span></td><td>${top}</td></tr>`;
+    }).join("");
+}
+$("qc").oninput = renderCamTable;
+renderCamara();
+setTab(["#senado", "#presidente", "#validos", "#ritmo", "#camara"].includes(location.hash) ? location.hash.slice(1) : store.get("tse-tab") || "presidente");
 </script>

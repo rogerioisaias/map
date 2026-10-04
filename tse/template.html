@@ -408,6 +408,7 @@ function renderKpis(v) {
       <span class="small num">Nulos ${nf.format(v.vn)} (${pf(nulos)})</span>
     </div>
     <div class="kpi">
+      ${v.uf === "BR" && v.fonte === "soma" ? `<p class="note" style="border-left-color:var(--accent);margin-bottom:.75rem">Total do Brasil calculado pela soma das 27 UFs e do exterior. O arquivo nacional do TSE está atrasado: marcava ${pf(v.oficial.pst)} das seções às ${v.oficial.hg}. A soma pode diferir um pouco do número oficial até o TSE atualizar o arquivo.</p>` : ""}
       <p class="note">${v.final ? "Resultado com 100% das seções totalizadas." : `Retrato parcial. O painel guarda os números do TSE capturados em ${D.gerado.replace(" ", " às ")} (horário de Brasília). A apuração continua no site oficial.`}</p>
     </div>`;
 }
@@ -603,7 +604,8 @@ $("scopeSel2").onchange = e => setScope(e.target.value);
 $("q").oninput = renderTable;
 
 const B = D.brasil;
-$("headSub").textContent = `Totalização ${B.final ? "encerrada" : "em andamento"} · dados de ${B.dg} às ${B.hg} · ${nf.format(B.vv)} votos válidos apurados`;
+$("headSub").textContent = `Totalização ${B.final ? "encerrada" : "em andamento"} · dados de ${B.dg} às ${B.hg} · ${nf.format(B.vv)} votos válidos apurados`
+  + (B.fonte === "soma" ? " · total do Brasil somado pelas UFs" : "");
 $("statusTxt").textContent = B.final ? "Final" : `Parcial · ${pf(B.pst)}`;
 if (B.final) $("statusPill").classList.add("final");
 $("srcLine").innerHTML = `Fonte: Tribunal Superior Eleitoral, <a href="${D.fonte}" target="_blank" rel="noopener">resultados.tse.jus.br</a>. Arquivos de divulgação capturados em ${D.gerado.replace(" ", " às ")} (Brasília).`;

@@ -161,6 +161,27 @@ def senado_atual():
     return {"versao": d["Metadados"]["Versao"], "lista": sorted(lista, key=lambda x: (x["uf"], x["nome"]))}
 
 
+def soma_ufs(brutos):
+    """Total do Brasil somando as 27 UFs e o exterior.
+
+    Usado quando o arquivo nacional do TSE está mais atrasado que os arquivos estaduais.
+    """
+    rs = [resumo(brutos[uf]) for uf in UFS]
+    t = {k: sum(r[k] for r in rs) for k in ("st", "ts", "te", "c", "a", "tv", "vv", "vb", "vn")}
+    votos = {}
+    for uf in UFS:
+        for c in candidatos(brutos[uf]):
+            votos[c["n"]] = votos.get(c["n"], 0) + c["vap"]
+    ultimo = max(rs, key=lambda r: (r["dg"][6:] + r["dg"][3:5] + r["dg"][:2], r["hg"]))
+    pct = lambda a, b: a / b * 100 if b else 0.0
+    return {
+        "dg": ultimo["dg"], "hg": ultimo["hg"], "andamento": "p", "final": all(r["final"] for r in rs),
+        "pst": pct(t["st"], t["ts"]), **t,
+        "pc": pct(t["c"], t["c"] + t["a"]), "pa": pct(t["a"], t["c"] + t["a"]),
+        "pvv": pct(t["vv"], t["tv"]), "pvb": pct(t["vb"], t["tv"]), "pvn": pct(t["vn"], t["tv"]),
+    }, votos
+
+
 def arquivo(uf):
     return f"{BASE}/dados/{uf}/{uf}-c{CARGO}-e{ELEICAO}-u.json"
 
@@ -195,11 +216,21 @@ def main():
     for c in cands:
         c["foto"] = foto_b64("6257", "br", c["sq"])
 
+    brasil = {**resumo(nac), "fonte": "tse"}
+    somado, votos = soma_ufs(brutos)
+    if somado["st"] > brasil["st"]:
+        # O arquivo nacional ficou para trás: usa a soma das UFs e guarda o dado oficial para comparação.
+        brasil = {**somado, "fonte": "soma", "oficial": {"dg": brasil["dg"], "hg": brasil["hg"], "pst": brasil["pst"]}}
+        for c in cands:
+            c["vap"] = votos.get(c["n"], 0)
+            c["p"] = c["vap"] / somado["vv"] * 100 if somado["vv"] else 0.0
+        cands.sort(key=lambda c: -c["vap"])
+
     agora = datetime.now(BRT)
     dados = {
         "gerado": agora.strftime("%Y-%m-%d %Hh%M"),
         "fonte": "https://resultados.tse.jus.br/oficial/app/index.html#/eleicao/6257/uf/br/cargo/1/vis/nominal/resultados",
-        "brasil": {**resumo(nac), "cands": cands},
+        "brasil": {**brasil, "cands": cands},
         "ufs": [
             {"uf": uf.upper(), "nome": nome, **resumo(brutos[uf]),
              "votos": {c["n"]: [c["vap"], c["p"]] for c in candidatos(brutos[uf])}}
@@ -217,7 +248,9 @@ def main():
     destino = Path(args.saida) if args.saida else AQUI / "saida" / f"apuracao-presidente-2026_{agora.strftime('%Y-%m-%d_%Hh%M')}.html"
     destino.parent.mkdir(parents=True, exist_ok=True)
     destino.write_text(html, encoding="utf-8")
-    print(f"{destino}  |  Brasil: {dados['brasil']['pst']:.2f}% das seções totalizadas às {nac['hg']}"
+    b = dados["brasil"]
+    print(f"{destino}  |  Brasil: {b['pst']:.2f}% das seções totalizadas às {b['hg']}"
+          f"{' (soma das UFs; arquivo nacional às ' + nac['hg'] + ')' if b['fonte'] == 'soma' else ''}"
           f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}")
 
 

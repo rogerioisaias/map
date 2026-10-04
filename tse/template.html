@@ -1,0 +1,414 @@
+<title>Apuração Presidente 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Montserrat:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabeçalho escuro de painel; 2 colunas (ranking | sidebar de totais), depois mapa em mosaico + tabela por UF. */
+:root {
+  --bg: #F5F7FA; --card: #FFFFFF; --hover: #F0F4F8; --line: rgba(0,0,0,0.08); --track: #E8EDF3;
+  --fg: #1A2332; --fg2: #4A5E78; --accent: #1565C0; --accent2: #0D47A1;
+  --ok: #2E7D32; --warn: #E65100; --head: #0F172A; --head-fg: #E8EDF4; --head-fg2: #94A3B8;
+  --k22: #1565C0; --k13: #C62828; --k70: #E65100; --k55: #2E7D32; --k14: #6A1B9A; --k30: #00838F; --kx: #78909C;
+  --f-display: "Poppins", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1419; --card: #151C28; --hover: #1A2332; --line: rgba(255,255,255,0.08); --track: #232D3D;
+  --fg: #E8EDF4; --fg2: #94A3B8; --accent: #64B5F6; --accent2: #90CAF9; --ok: #66BB6A; --warn: #FFA726;
+  --head: #0B0F14; --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #9AAAB6;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0F1419; --card: #151C28; --hover: #1A2332; --line: rgba(255,255,255,0.08); --track: #232D3D;
+  --fg: #E8EDF4; --fg2: #94A3B8; --accent: #64B5F6; --accent2: #90CAF9; --ok: #66BB6A; --warn: #FFA726;
+  --head: #0B0F14; --k22: #5C9DF0; --k13: #EF6461; --k70: #FF9A4D; --k55: #5FBF63; --k14: #B47CDB; --k30: #3CC4D0; --kx: #9AAAB6;
+  color-scheme: dark;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.7; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.2; text-wrap: balance; }
+a { color: var(--accent); }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--f-mono); }
+.label { font-family: var(--f-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg2); }
+
+header { background: var(--head); color: var(--head-fg); padding: calc(1.25rem + env(safe-area-inset-top, 0px)) 16px 1.25rem; }
+.wrap { max-width: 1200px; margin: 0 auto; }
+.head-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+header h1 { font-size: clamp(1.35rem, 3vw, 1.9rem); font-weight: 800; }
+header .sub { color: var(--head-fg2); font-size: 0.85rem; }
+.head-tools { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.pill { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.4rem 0.85rem; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.06); color: var(--head-fg); cursor: pointer; transition: background .2s; white-space: nowrap; }
+.pill:hover { background: rgba(255,255,255,0.14); }
+.pill:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, .tile:focus-visible, tr:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.status { display: inline-flex; align-items: center; gap: 0.45rem; cursor: default; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #FFA726; }
+.status.final .dot { background: #66BB6A; }
+
+main { padding: 1.5rem 16px 3rem; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 1.25rem; align-items: start; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem; min-width: 0; }
+.stack { display: grid; gap: 1.25rem; }
+
+.scope-bar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.scope-bar h2 { font-size: 1.25rem; font-weight: 700; }
+select, input[type="search"] { font-family: var(--f-body); font-size: 0.85rem; color: var(--fg); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 0.45rem 0.9rem; }
+.btn { font-family: var(--f-mono); font-size: 0.72rem; border-radius: 999px; padding: 0.45rem 0.9rem; border: 1px solid var(--line); background: var(--card); color: var(--fg); cursor: pointer; }
+.btn:hover { background: var(--hover); }
+
+.verdict { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 7%, transparent); padding: 0.85rem 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.25rem; font-size: 0.92rem; }
+.verdict strong { font-family: var(--f-display); }
+
+.cand { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 0.25rem 0.85rem; align-items: center; padding: 0.7rem 0; border-top: 1px solid var(--line); }
+.cand:first-of-type { border-top: 0; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--track); grid-row: span 2; display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; color: var(--fg2); font-size: 0.8rem; border: 2px solid var(--kc); }
+.cname { font-family: var(--f-display); font-weight: 600; font-size: 0.98rem; display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; min-width: 0; }
+.badge { font-family: var(--f-mono); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; border-radius: 4px; padding: 0.1rem 0.4rem; background: color-mix(in srgb, var(--kc) 14%, transparent); color: var(--kc); font-weight: 500; }
+.cmeta { font-size: 0.78rem; color: var(--fg2); min-width: 0; }
+.cvals { text-align: right; grid-row: span 2; }
+.cvals .pct { font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; }
+.cvals .vot { font-size: 0.75rem; color: var(--fg2); }
+.bar { grid-column: 2 / 3; position: relative; height: 10px; background: var(--track); border-radius: 999px; overflow: visible; }
+.bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--kc); transition: width .5s ease; }
+.bar .half { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 0; border-left: 1.5px dashed var(--fg2); opacity: .6; }
+.scale { display: grid; grid-template-columns: 44px minmax(0,1fr) auto; gap: 0 0.85rem; margin-top: 0.35rem; }
+.scale div { grid-column: 2; position: relative; height: 1rem; font-family: var(--f-mono); font-size: 0.65rem; color: var(--fg2); }
+.scale span { position: absolute; transform: translateX(-50%); }
+.scale span:first-child { transform: none; } .scale span:last-child { transform: translateX(-100%); }
+
+.kpi { display: grid; gap: 0.2rem; padding: 0.85rem 0; border-top: 1px solid var(--line); }
+.kpi:first-of-type { border-top: 0; padding-top: 0; }
+.kpi .big { font-family: var(--f-display); font-weight: 700; font-size: 1.45rem; }
+.kpi .small { font-size: 0.78rem; color: var(--fg2); }
+.prog { height: 8px; border-radius: 999px; background: var(--track); overflow: hidden; }
+.prog > i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.stacked { display: flex; height: 8px; border-radius: 999px; overflow: hidden; background: var(--track); }
+.stacked i { display: block; height: 100%; }
+.note { font-size: 0.8rem; color: var(--fg2); border-left: 3px solid var(--warn); padding-left: 0.75rem; }
+
+.section-title { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: baseline; justify-content: space-between; margin-bottom: 1rem; }
+.section-title h2 { font-size: 1.2rem; font-weight: 700; }
+.mapgrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; max-width: 560px; }
+.tile { aspect-ratio: 1 / 0.86; max-width: 100%; border-radius: 8px; padding: 0.35rem 0.45rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; border: 2px solid transparent; color: var(--fg); background: color-mix(in srgb, var(--kc) var(--mix), var(--card)); transition: transform .15s; min-width: 0; }
+.tile:hover { transform: translateY(-2px); }
+.tile.sel { border-color: var(--fg); }
+.tile b { font-family: var(--f-display); font-size: 0.85rem; }
+.tile small { font-family: var(--f-mono); font-size: 0.62rem; line-height: 1.2; }
+.tile.strong { color: #FFFFFF; }
+.maplayout { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.legend { display: grid; gap: 0.5rem; font-size: 0.82rem; }
+.legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--kc); margin-right: 0.45rem; vertical-align: -1px; }
+.ramp { display: flex; gap: 3px; margin-top: 0.25rem; }
+.ramp i { width: 22px; height: 10px; border-radius: 2px; background: color-mix(in srgb, var(--fg2) var(--mix), var(--card)); }
+
+.tablebox { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 760px; }
+th { font-family: var(--f-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--fg2); font-weight: 500; text-align: left; padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--line); cursor: pointer; white-space: nowrap; user-select: none; }
+th.r, td.r { text-align: right; }
+th[aria-sort="ascending"]::after { content: " ▲"; } th[aria-sort="descending"]::after { content: " ▼"; }
+td { padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr { cursor: pointer; } tbody tr:hover { background: var(--hover); }
+tbody tr.sel { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.chip { display: inline-flex; gap: 0.35rem; align-items: center; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--kc); }
+.mini { display: inline-block; width: 56px; height: 6px; border-radius: 999px; background: var(--track); vertical-align: middle; margin-right: 0.4rem; overflow: hidden; }
+.mini i { display: block; height: 100%; background: var(--accent); }
+
+footer { font-size: 0.78rem; color: var(--fg2); padding: 0 16px 2.5rem; }
+footer .wrap { display: grid; gap: 0.35rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+
+.toast { position: fixed; left: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--head); color: var(--head-fg); font-size: 0.85rem; padding: 0.55rem 1rem; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+.fade { animation: fadeIn .4s ease; }
+@keyframes fadeIn { from { opacity: .4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade { animation: none; } .bar > i, .tile { transition: none; } }
+@media (max-width: 900px) { .grid, .maplayout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 480px) { .tile small { display: none; } .cvals .pct { font-size: 1rem; } }
+@media print {
+  #themeBtn, #copyBtn, .toast, select, input[type="search"] { display: none !important; }
+  body { background: #fff; color: #000; }
+  .card { break-inside: avoid; }
+}
+</style>
+
+<header>
+  <div class="wrap head-row">
+    <div>
+      <div class="label" style="color:var(--head-fg2)">TSE · Eleição Ordinária Federal 2026 · 1º turno</div>
+      <h1>Apuração para Presidente da República</h1>
+      <div class="sub" id="headSub"></div>
+    </div>
+    <div class="head-tools">
+      <span class="pill status" id="statusPill"><span class="dot"></span><span id="statusTxt"></span></span>
+      <button class="pill" id="themeBtn" type="button"></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap stack">
+    <div class="grid">
+      <section class="card fade" id="rankCard" aria-labelledby="scopeTitle">
+        <div class="scope-bar">
+          <h2 id="scopeTitle">Brasil</h2>
+          <div class="head-tools">
+            <label class="label" for="scopeSel">Recorte</label>
+            <select id="scopeSel"></select>
+            <button class="btn" id="copyBtn" type="button">Copiar resumo</button>
+          </div>
+        </div>
+        <div class="verdict" id="verdict"></div>
+        <div id="ranking"></div>
+        <div class="scale"><div><span>0%</span><span style="left:50%">50% dos válidos</span><span style="left:100%">100%</span></div></div>
+      </section>
+
+      <aside class="card fade" aria-label="Totais da apuração" id="kpis"></aside>
+    </div>
+
+    <section class="card" aria-labelledby="mapTitle">
+      <div class="section-title">
+        <h2 id="mapTitle">Quem lidera em cada UF</h2>
+        <span class="label">Clique em uma UF para ver o detalhe</span>
+      </div>
+      <div class="maplayout">
+        <div class="mapgrid" id="map"></div>
+        <div class="legend" id="legend"></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="tblTitle">
+      <div class="section-title">
+        <h2 id="tblTitle">Resultado por UF</h2>
+        <input type="search" id="q" placeholder="Filtrar por UF, estado ou candidato" aria-label="Filtrar tabela">
+      </div>
+      <div class="tablebox">
+        <table>
+          <thead><tr id="thead"></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div id="srcLine"></div>
+    <div>Percentuais de candidatos sobre votos válidos. Brancos e nulos sobre o total de votos. Abstenção sobre o eleitorado das seções totalizadas.</div>
+    <div>Autoria: Rogério Isaias em __AUTORIA__</div>
+  </div>
+</footer>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const D = __DATA__;
+
+const nf = new Intl.NumberFormat("pt-BR");
+const pf = (x, d = 2) => x.toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d }) + "%";
+const KNOWN = ["22", "13", "70", "55", "14", "30"];
+const kc = n => `var(--k${KNOWN.includes(n) ? n : "x"})`;
+const META = Object.fromEntries(D.brasil.cands.map(c => [c.n, c]));
+const UFPOS = { RR:[1,0], AP:[3,0], AM:[1,1], PA:[2,1], MA:[3,1], CE:[4,1], RN:[5,1], AC:[0,2], RO:[1,2], MT:[2,2], TO:[3,2], PI:[4,2], PB:[5,2],
+  MS:[1,3], GO:[2,3], DF:[3,3], BA:[4,3], PE:[5,3], PR:[1,4], SP:[2,4], MG:[3,4], ES:[4,4], AL:[5,4], SC:[1,5], RJ:[3,5], SE:[5,5], RS:[1,6], ZZ:[5,6] };
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+let scope = "BR";
+let sortKey = "nome", sortDir = 1;
+
+function view(code) {
+  if (code === "BR") return { ...D.brasil, nome: "Brasil", uf: "BR" };
+  const u = D.ufs.find(x => x.uf === code);
+  const cands = Object.entries(u.votos).map(([n, [vap, p]]) => ({ ...META[n], vap, p })).sort((a, b) => b.vap - a.vap);
+  return { ...u, cands };
+}
+
+function initials(name) { return name.split(/\s+/).filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(""); }
+
+function renderRanking(v) {
+  $("scopeTitle").textContent = v.uf === "BR" ? "Brasil" : `${v.nome} (${v.uf})`;
+  $("ranking").innerHTML = v.cands.map(c => `
+    <div class="cand" style="--kc:${kc(c.n)}">
+      ${c.foto ? `<img class="avatar" src="${c.foto}" alt="Foto de ${c.nmu}">` : `<div class="avatar">${initials(c.nmu)}</div>`}
+      <div class="cname">${c.nmu} <span class="badge">${c.n} · ${c.sg}</span>${c.eleito ? '<span class="badge" style="--kc:var(--ok)">Eleito</span>' : ""}</div>
+      <div class="cvals"><div class="pct num">${pf(c.p)}</div><div class="vot num">${nf.format(c.vap)} votos</div></div>
+      <div class="bar" role="img" aria-label="${c.nmu}: ${pf(c.p)} dos votos válidos"><i style="width:${c.p}%"></i><span class="half"></span></div>
+      <div class="cmeta" style="grid-column:2">Vice: ${c.vice} (${c.vicesg})${c.coligacao ? ` · ${c.coligacao}: ${c.com}` : ""}</div>
+    </div>`).join("");
+
+  const [a, b] = v.cands;
+  const gap = a.p - b.p;
+  let txt;
+  if (v.final) {
+    txt = a.p > 50 && v.uf === "BR" ? `<strong>${a.nmu} venceu no 1º turno</strong> com ${pf(a.p)} dos votos válidos.`
+      : `<strong>Apuração encerrada.</strong> ${a.nmu} terminou à frente com ${pf(a.p)}.`;
+  } else if (v.uf === "BR") {
+    txt = a.p > 50
+      ? `<strong>${a.nmu} lidera com ${pf(a.p)} dos válidos</strong>, acima da linha de 50%. Com ${pf(v.pst)} das seções totalizadas, a vitória no 1º turno depende de manter essa marca até o fim. ${b.nmu} vem a ${gap.toFixed(2).replace(".", ",")} pontos.`
+      : `<strong>${a.nmu} lidera com ${pf(a.p)} dos válidos</strong>, abaixo de 50%. Mantido o quadro com ${pf(v.pst)} das seções totalizadas, a disputa vai ao 2º turno contra ${b.nmu} (${pf(b.p)}).`;
+  } else {
+    txt = `<strong>${a.nmu} lidera em ${v.nome}</strong> com ${pf(a.p)} dos válidos, ${gap.toFixed(2).replace(".", ",")} pontos à frente de ${b.nmu}. Totalizadas: ${pf(v.pst)} das seções.`;
+  }
+  $("verdict").innerHTML = txt;
+}
+
+function renderKpis(v) {
+  const brancos = v.pvb, nulos = v.pvn, validos = 100 - brancos - nulos;
+  $("kpis").innerHTML = `
+    <div class="kpi">
+      <span class="label">Seções totalizadas</span>
+      <span class="big num">${pf(v.pst)}</span>
+      <div class="prog"><i style="width:${v.pst}%"></i></div>
+      <span class="small num">${nf.format(v.st)} de ${nf.format(v.ts)} seções · ${v.dg} às ${v.hg}</span>
+    </div>
+    <div class="kpi">
+      <span class="label">Eleitorado</span>
+      <span class="big num">${nf.format(v.te)}</span>
+      <span class="small">eleitores aptos em ${v.uf === "BR" ? "todo o país e no exterior" : v.nome}</span>
+    </div>
+    <div class="kpi">
+      <span class="label">Comparecimento · Abstenção</span>
+      <span class="big num">${pf(v.pc)}</span>
+      <div class="stacked"><i style="width:${v.pc}%;background:var(--accent)"></i><i style="width:${v.pa}%;background:var(--kx)"></i></div>
+      <span class="small num">${nf.format(v.c)} votaram · ${nf.format(v.a)} faltaram (${pf(v.pa)})</span>
+    </div>
+    <div class="kpi">
+      <span class="label">Composição dos votos</span>
+      <div class="stacked" role="img" aria-label="Válidos ${pf(validos)}, brancos ${pf(brancos)}, nulos ${pf(nulos)}">
+        <i style="width:${validos}%;background:var(--ok)"></i><i style="width:${brancos}%;background:var(--kx)"></i><i style="width:${nulos}%;background:var(--warn)"></i>
+      </div>
+      <span class="small num">Válidos ${nf.format(v.vv)} (${pf(validos)})</span>
+      <span class="small num">Brancos ${nf.format(v.vb)} (${pf(brancos)})</span>
+      <span class="small num">Nulos ${nf.format(v.vn)} (${pf(nulos)})</span>
+    </div>
+    <div class="kpi">
+      <p class="note">${v.final ? "Resultado com 100% das seções totalizadas." : `Retrato parcial. O painel guarda os números do TSE capturados em ${D.gerado.replace(" ", " às ")} (horário de Brasília). A apuração continua no site oficial.`}</p>
+    </div>`;
+}
+
+function rowData(u) {
+  const cs = Object.entries(u.votos).map(([n, [vap, p]]) => ({ n, vap, p })).sort((a, b) => b.vap - a.vap);
+  const [a, b] = cs;
+  return { u, a, b, lider: META[a.n].nmu, seg: META[b.n].nmu, margem: a.p - b.p };
+}
+
+function renderMap() {
+  const rows = D.ufs.map(rowData);
+  $("map").innerHTML = rows.map(({ u, a, margem, lider }) => {
+    const [c, r] = UFPOS[u.uf];
+    const mix = Math.round(Math.min(92, 28 + margem * 1.6));
+    return `<div class="tile ${mix > 58 ? "strong" : ""} ${scope === u.uf ? "sel" : ""}" role="button" tabindex="0" data-uf="${u.uf}"
+      style="grid-column:${c + 1};grid-row:${r + 1};--kc:${kc(a.n)};--mix:${mix}%"
+      title="${u.nome}: ${lider} ${pf(a.p)} · margem ${margem.toFixed(1).replace(".", ",")} pp · ${pf(u.pst)} totalizadas">
+      <b>${u.uf === "ZZ" ? "EXT" : u.uf}</b><small>${pf(a.p, 1)}<br>${Math.round(u.pst)}% apur.</small></div>`;
+  }).join("");
+
+  const leaders = {};
+  rows.forEach(r => { leaders[r.a.n] = (leaders[r.a.n] || 0) + 1; });
+  $("legend").innerHTML = Object.entries(leaders).sort((x, y) => y[1] - x[1]).map(([n, k]) =>
+    `<div style="--kc:${kc(n)}"><span class="sw"></span><strong>${META[n].nmu}</strong> (${META[n].sg}) lidera em ${k} ${k === 1 ? "UF" : "UFs"}</div>`).join("")
+    + `<div class="small" style="margin-top:.5rem;color:var(--fg2);font-size:.78rem">Cor mais forte = margem maior sobre o 2º colocado.
+       <div class="ramp"><i style="--mix:28%"></i><i style="--mix:45%"></i><i style="--mix:62%"></i><i style="--mix:80%"></i><i style="--mix:92%"></i></div>
+       <span class="mono" style="font-size:.65rem">0 pp → 40+ pp</span></div>`
+    + `<div style="font-size:.78rem;color:var(--fg2)">Cada UF tem seu próprio ritmo de totalização. Veja a coluna "Totalizadas" na tabela.</div>`;
+
+  $("map").querySelectorAll(".tile").forEach(t => {
+    t.onclick = () => setScope(t.dataset.uf);
+    t.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setScope(t.dataset.uf); } };
+  });
+}
+
+const COLS = [
+  { k: "uf", t: "UF", v: r => r.u.uf },
+  { k: "nome", t: "Estado", v: r => r.u.nome },
+  { k: "pst", t: "Totalizadas", r: 1, v: r => r.u.pst },
+  { k: "lider", t: "Líder", v: r => r.lider },
+  { k: "pa", t: "% líder", r: 1, v: r => r.a.p },
+  { k: "seg", t: "2º lugar", v: r => r.seg },
+  { k: "pb", t: "% 2º", r: 1, v: r => r.b.p },
+  { k: "margem", t: "Margem (pp)", r: 1, v: r => r.margem },
+  { k: "abst", t: "Abstenção", r: 1, v: r => r.u.pa },
+  { k: "te", t: "Eleitorado", r: 1, v: r => r.u.te },
+];
+
+function renderTable() {
+  $("thead").innerHTML = COLS.map(c => `<th class="${c.r ? "r" : ""}" data-k="${c.k}" ${sortKey === c.k ? `aria-sort="${sortDir > 0 ? "ascending" : "descending"}"` : ""}>${c.t}</th>`).join("");
+  $("thead").querySelectorAll("th").forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = COLS.find(c => c.k === k).r ? -1 : 1; }
+    renderTable();
+  });
+  const q = $("q").value.trim().toLowerCase();
+  const col = COLS.find(c => c.k === sortKey);
+  const rows = D.ufs.map(rowData)
+    .filter(r => !q || [r.u.uf, r.u.nome, r.lider, r.seg].join(" ").toLowerCase().includes(q))
+    .sort((x, y) => { const a = col.v(x), b = col.v(y); return (typeof a === "string" ? a.localeCompare(b, "pt-BR") : a - b) * sortDir; });
+  $("tbody").innerHTML = rows.map(r => `
+    <tr data-uf="${r.u.uf}" tabindex="0" class="${scope === r.u.uf ? "sel" : ""}">
+      <td class="mono">${r.u.uf}</td><td>${r.u.nome}</td>
+      <td class="r"><span class="mini"><i style="width:${r.u.pst}%"></i></span>${pf(r.u.pst)}</td>
+      <td><span class="chip" style="--kc:${kc(r.a.n)}"><i></i>${r.lider}</span></td><td class="r">${pf(r.a.p)}</td>
+      <td><span class="chip" style="--kc:${kc(r.b.n)}"><i></i>${r.seg}</span></td><td class="r">${pf(r.b.p)}</td>
+      <td class="r">${r.margem.toFixed(2).replace(".", ",")}</td><td class="r">${pf(r.u.pa)}</td><td class="r">${nf.format(r.u.te)}</td>
+    </tr>`).join("") || `<tr><td colspan="10" style="text-align:center;color:var(--fg2)">Nenhuma UF corresponde ao filtro.</td></tr>`;
+  $("tbody").querySelectorAll("tr[data-uf]").forEach(tr => {
+    tr.onclick = () => setScope(tr.dataset.uf);
+    tr.onkeydown = e => { if (e.key === "Enter") setScope(tr.dataset.uf); };
+  });
+}
+
+function setScope(code) {
+  scope = code;
+  $("scopeSel").value = code;
+  const v = view(code);
+  renderRanking(v); renderKpis(v); renderMap(); renderTable();
+  $("rankCard").classList.remove("fade"); void $("rankCard").offsetWidth; $("rankCard").classList.add("fade");
+  if (code !== "BR") $("rankCard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 2200); }
+
+function summary() {
+  const v = view(scope);
+  const lines = [`Presidente 2026, 1º turno · ${v.uf === "BR" ? "Brasil" : v.nome} · ${pf(v.pst)} das seções totalizadas (${v.dg} ${v.hg})`, "",
+    "| Candidato | Nº | Partido | Votos | % válidos |", "|---|---|---|---:|---:|",
+    ...v.cands.map(c => `| ${c.nmu} | ${c.n} | ${c.sg} | ${nf.format(c.vap)} | ${pf(c.p)} |`), "",
+    `Brancos: ${pf(v.pvb)} · Nulos: ${pf(v.pvn)} · Abstenção: ${pf(v.pa)}`, `Fonte: TSE (${D.fonte})`];
+  return lines.join("\n");
+}
+
+$("copyBtn").onclick = () => {
+  const text = summary();
+  navigator.clipboard.writeText(text).then(() => toast("Resumo copiado em Markdown")).catch(() => {
+    const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); toast("Resumo copiado em Markdown"); } catch { toast("Selecione e copie o texto manualmente"); }
+    ta.remove();
+  });
+};
+
+function applyTheme(t) {
+  if (t) document.documentElement.setAttribute("data-theme", t);
+  const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  $("themeBtn").textContent = dark ? "☀️ Modo claro" : "🌙 Modo escuro";
+}
+$("themeBtn").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  store.set("tse-theme", next); applyTheme(next);
+};
+applyTheme(store.get("tse-theme"));
+
+$("scopeSel").innerHTML = `<option value="BR">Brasil</option>` + D.ufs.slice().sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+  .map(u => `<option value="${u.uf}">${u.nome}</option>`).join("");
+$("scopeSel").onchange = e => setScope(e.target.value);
+$("q").oninput = renderTable;
+
+const B = D.brasil;
+$("headSub").textContent = `Totalização ${B.final ? "encerrada" : "em andamento"} · dados de ${B.dg} às ${B.hg} · ${nf.format(B.vv)} votos válidos apurados`;
+$("statusTxt").textContent = B.final ? "Final" : `Parcial · ${pf(B.pst)}`;
+if (B.final) $("statusPill").classList.add("final");
+$("srcLine").innerHTML = `Fonte: Tribunal Superior Eleitoral, <a href="${D.fonte}" target="_blank" rel="noopener">resultados.tse.jus.br</a>. Arquivos de divulgação capturados em ${D.gerado.replace(" ", " às ")} (Brasília).`;
+
+setScope("BR");
+</script>

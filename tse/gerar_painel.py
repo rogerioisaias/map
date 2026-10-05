@@ -317,6 +317,14 @@ def main():
         "senado": [senado(uf, UFS[uf], d) for uf, d in sen_brutos.items()],
     }
 
+    # Mapa por município: malha do IBGE (tse/geo) e resultados baixados por tse/municipios.py.
+    try:
+        dados["geoMun"] = json.loads((AQUI / "geo" / "municipios-br-path.json").read_text(encoding="utf-8"))
+        mun = json.loads((CACHE / "municipios-presidente.json").read_text(encoding="utf-8"))
+        dados["mun"] = {cdi: [m["nm"], m["uf"], m["pst"], int(m["fim"]), *[x for c in m["c"] for x in c[:2]]] for cdi, m in mun.items()}
+    except Exception:
+        dados.setdefault("mun", {})
+
     hist = historico.acrescentar(historico.carregar(), historico.ponto(dados["ufs"], oficial))
     historico.salvar(hist)
     dados["historico"] = hist
@@ -334,7 +342,8 @@ def main():
           f"  |  Senado: última UF atualizada às {max(u['hg'] for u in dados['senado'])}"
           f" [{sum(u['st'] for u in dados['senado'])} seções]"
           f"  |  Câmara: {max(u['hg'] for u in dados['camara'])} [{sum(u['st'] for u in dados['camara'])} seções]"
-          f"  |  Governador: {max(u['hg'] for u in dados['governadores'])} [{sum(u['st'] for u in dados['governadores'])} seções]")
+          f"  |  Governador: {max(u['hg'] for u in dados['governadores'])} [{sum(u['st'] for u in dados['governadores'])} seções]"
+          f"  |  Municípios: {len(dados['mun'])} [{sum(m[3] for m in dados['mun'].values())} encerrados]")
 
 
 if __name__ == "__main__":

@@ -196,6 +196,16 @@ table.stale { min-width: 680px; }
 .seat-key { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.78rem; color: var(--fg2); margin: 0.75rem 0 1rem; }
 .seat-key .seat { width: 11px; height: 11px; vertical-align: -1px; margin-right: 0.3rem; }
 .placar-view { margin-bottom: 1rem; }
+.munbox { position: relative; }
+.munbox svg { display: block; width: 100%; height: auto; max-width: 680px; cursor: grab; touch-action: none; }
+.munbox svg.drag { cursor: grabbing; }
+.munbox .m { stroke: none; }
+.munbox .ufb { fill: none; stroke: var(--card); stroke-width: 0.9; vector-effect: non-scaling-stroke; pointer-events: none; }
+.munbox .ufsel { fill: none; stroke: var(--fg); stroke-width: 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.zoom { position: absolute; left: 0; bottom: 0; display: flex; gap: 0.3rem; z-index: 2; }
+.zoom .btn { min-width: 2rem; }
+.mtip { position: absolute; z-index: 3; pointer-events: none; background: var(--card); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--sombra); padding: 0.5rem 0.7rem; font-size: 0.78rem; line-height: 1.4; max-width: 240px; }
+.mtip b { font-family: var(--f-display); }
 .quoruns { display: grid; gap: 0.2rem; border-top: 1px solid var(--line); padding-top: 0.85rem; margin-top: 0.25rem; }
 .qrow { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) minmax(0, 15rem); gap: 0.4rem 0.9rem; align-items: center; padding: 0.55rem 0; border-bottom: 1px dashed var(--line); }
 .qrow:last-child { border-bottom: 0; }
@@ -295,10 +305,18 @@ table.camtbl { min-width: 720px; }
 
     <section class="card" aria-labelledby="mapTitle">
       <div class="section-title">
-        <h2 id="mapTitle">Quem lidera em cada UF</h2>
-        <span class="label">Área de cada estado proporcional ao eleitorado · clique para ver o detalhe</span>
+        <h2 id="mapTitle">Quem lidera no mapa</h2>
+        <div class="filters" id="mapMode" role="group" aria-label="Tipo de mapa"></div>
       </div>
-      <div class="maplayout">
+      <div class="maplayout" id="munLayout">
+        <div class="mapbox munbox" id="munBox">
+          <div class="zoom"><button class="btn" type="button" id="zIn" aria-label="Aproximar">+</button><button class="btn" type="button" id="zOut" aria-label="Afastar">−</button><button class="btn" type="button" id="zReset">Brasil</button></div>
+          <div id="munMap"></div>
+          <div class="mtip" id="mTip" hidden></div>
+        </div>
+        <div class="legend" id="munLegend"></div>
+      </div>
+      <div class="maplayout" id="ufLayout" hidden>
         <div class="mapbox" id="map"></div>
         <div class="legend" id="legend"></div>
       </div>
@@ -610,6 +628,64 @@ function renderMap() {
   });
 }
 
+/* ---------- Mapa por município ---------- */
+const MUN = D.mun || {}, GM = D.geoMun || {};
+let mapMode = Object.keys(MUN).length && Object.keys(GM).length ? "mun" : "uf";
+const VB0 = [0, 0, 880, 790]; let vb = VB0.slice();
+function munCor(m) {
+  if (!m || m.length < 6) return "var(--track)";
+  const marg = m[5] - (m[7] || 0), mix = Math.round(Math.min(92, 30 + marg * 1.3));
+  return `color-mix(in srgb, ${kc(m[4])} ${mix}%, var(--card))`;
+}
+function renderMapMode() {
+  const tem = Object.keys(MUN).length && Object.keys(GM).length;
+  $("mapMode").innerHTML = (tem ? [["mun", "Municípios"], ["uf", "Estados (por eleitorado)"]] : [["uf", "Estados (por eleitorado)"]])
+    .map(([k, n]) => `<button class="btn" type="button" data-m="${k}" aria-pressed="${mapMode === k}">${n}</button>`).join("");
+  $("mapMode").querySelectorAll(".btn").forEach(b => b.onclick = () => { mapMode = b.dataset.m; renderMapMode(); });
+  $("munLayout").hidden = mapMode !== "mun";
+  $("ufLayout").hidden = mapMode !== "uf";
+}
+function renderMun() {
+  if (!Object.keys(GM).length) return;
+  const paths = Object.entries(GM).map(([cdi, d]) => `<path class="m" data-c="${cdi}" d="${d}" style="fill:${munCor(MUN[cdi])}"/>`).join("");
+  const ufs = Object.values(D.geo || {}).map(g => `<path class="ufb" d="${g.d}"/>`).join("");
+  $("munMap").innerHTML = `<svg id="munSvg" viewBox="${vb.join(" ")}" role="img" aria-label="Mapa do Brasil por município, colorido por quem lidera para Presidente">${paths}${ufs}<path class="ufsel" id="ufSel" d=""/></svg>`;
+  const cont = {}, tot = Object.keys(MUN).length;
+  Object.values(MUN).forEach(m => { if (m[4]) cont[m[4]] = (cont[m[4]] || 0) + 1; });
+  const fim = Object.values(MUN).filter(m => m[3]).length;
+  $("munLegend").innerHTML = Object.entries(cont).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n, k]) =>
+      `<div style="--kc:${kc(n)}"><span class="sw"></span><strong>${META[n]?.nmu || n}</strong> (${META[n]?.sg || ""}) lidera em ${nf.format(k)} municípios</div>`).join("")
+    + `<div class="small" style="margin-top:.5rem;color:var(--fg2);font-size:.78rem">Cor mais forte = margem maior sobre o 2º colocado.
+       <div class="ramp"><i style="--mix:30%"></i><i style="--mix:45%"></i><i style="--mix:62%"></i><i style="--mix:80%"></i><i style="--mix:92%"></i></div></div>`
+    + `<div style="font-size:.78rem;color:var(--fg2)">${nf.format(tot)} de ${nf.format(Object.keys(GM).length)} municípios com dados · ${nf.format(fim)} com apuração encerrada. Passe o mouse para ver o resultado; clique para abrir o estado. Arraste para mover e use + e − para aproximar.</div>`
+    + `<div style="font-size:.72rem;color:var(--fg2)">Malha municipal: IBGE. Resultados: arquivos municipais do TSE.</div>`;
+  const svg = $("munSvg"), tip = $("mTip"), box = $("munBox");
+  svg.addEventListener("mousemove", e => {
+    const c = e.target.dataset?.c; if (!c) { tip.hidden = true; return; }
+    const m = MUN[c];
+    tip.innerHTML = m ? `<b>${m[0]} · ${m[1]}</b><br>${META[m[4]]?.nmu || m[4]}: ${pf(m[5])}${m[6] ? `<br>${META[m[6]]?.nmu || m[6]}: ${pf(m[7])}` : ""}<br><span style="color:var(--fg2)">${pf(m[2])} apuradas${m[3] ? " · encerrada" : ""}</span>` : "Sem dados ainda";
+    const r = box.getBoundingClientRect(); tip.hidden = false;
+    tip.style.left = Math.min(e.clientX - r.left + 14, r.width - 250) + "px"; tip.style.top = (e.clientY - r.top + 14) + "px";
+  });
+  svg.addEventListener("mouseleave", () => { tip.hidden = true; });
+  svg.addEventListener("click", e => { const m = MUN[e.target.dataset?.c]; if (m && !moved) setScope(m[1]); });
+  let drag = null, moved = false;
+  svg.addEventListener("pointerdown", e => { drag = { x: e.clientX, y: e.clientY, vb: vb.slice() }; moved = false; svg.classList.add("drag"); });
+  window.addEventListener("pointerup", () => { drag = null; svg.classList.remove("drag"); });
+  svg.addEventListener("pointermove", e => {
+    if (!drag) return; const k = vb[2] / svg.getBoundingClientRect().width;
+    const dx = (e.clientX - drag.x) * k, dy = (e.clientY - drag.y) * k; if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    vb = [drag.vb[0] - dx, drag.vb[1] - dy, vb[2], vb[3]]; svg.setAttribute("viewBox", vb.join(" "));
+  });
+  const zoom = f => { const cx = vb[0] + vb[2] / 2, cy = vb[1] + vb[3] / 2, w = Math.min(VB0[2], vb[2] * f), h = w * VB0[3] / VB0[2]; vb = [cx - w / 2, cy - h / 2, w, h]; svg.setAttribute("viewBox", vb.join(" ")); };
+  $("zIn").onclick = () => zoom(0.6); $("zOut").onclick = () => zoom(1 / 0.6); $("zReset").onclick = () => { vb = VB0.slice(); svg.setAttribute("viewBox", vb.join(" ")); };
+  markUf();
+}
+function markUf() {
+  const el = $("ufSel"); if (!el) return;
+  el.setAttribute("d", scope !== "BR" && D.geo?.[scope] ? D.geo[scope].d : "");
+}
+
 const COLS = [
   { k: "uf", t: "UF", v: r => r.u.uf },
   { k: "nome", t: "Estado", v: r => r.u.nome },
@@ -684,7 +760,7 @@ function setScope(code) {
   $("scopeSel").value = code;
   $("scopeSel2").value = code;
   const v = view(code);
-  renderRanking(v); renderKpis(v); renderMap(); renderTable(); renderValidos(v);
+  renderRanking(v); renderKpis(v); renderMap(); renderTable(); renderValidos(v); markUf();
   $("rankCard").classList.remove("fade"); void $("rankCard").offsetWidth; $("rankCard").classList.add("fade");
   if (code !== "BR" && !$("tab-presidente").hidden) $("rankCard").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
@@ -752,6 +828,7 @@ $("statusTxt").textContent = B.final ? "Final" : `Parcial · ${pf(B.pst)}`;
 if (B.final) $("statusPill").classList.add("final");
 $("srcLine").innerHTML = `Fonte: Tribunal Superior Eleitoral, <a href="${D.fonte}" target="_blank" rel="noopener">resultados.tse.jus.br</a>. Arquivos de divulgação capturados em ${D.gerado.replace(" ", " às ")} (Brasília).`;
 
+renderMapMode(); renderMun();
 setScope("BR");
 
 /* ---------- Ritmo e tendência ---------- */

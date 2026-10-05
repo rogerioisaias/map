@@ -650,7 +650,7 @@ function renderMun() {
   const paths = Object.entries(GM).map(([cdi, d]) => `<path class="m" data-c="${cdi}" d="${d}" style="fill:${munCor(MUN[cdi])}"/>`).join("");
   const ufs = Object.values(D.geo || {}).map(g => `<path class="ufb" d="${g.d}"/>`).join("");
   $("munMap").innerHTML = `<svg id="munSvg" viewBox="${vb.join(" ")}" role="img" aria-label="Mapa do Brasil por município, colorido por quem lidera para Presidente">${paths}${ufs}<path class="ufsel" id="ufSel" d=""/></svg>`;
-  const cont = {}, tot = Object.keys(MUN).length;
+  const cont = {}, tot = Object.keys(GM).filter(c => MUN[c]).length;
   Object.values(MUN).forEach(m => { if (m[4]) cont[m[4]] = (cont[m[4]] || 0) + 1; });
   const fim = Object.values(MUN).filter(m => m[3]).length;
   $("munLegend").innerHTML = Object.entries(cont).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([n, k]) =>

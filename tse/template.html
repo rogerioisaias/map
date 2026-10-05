@@ -196,6 +196,18 @@ table.stale { min-width: 680px; }
 .seat-key { display: flex; flex-wrap: wrap; gap: 1rem; font-size: 0.78rem; color: var(--fg2); margin: 0.75rem 0 1rem; }
 .seat-key .seat { width: 11px; height: 11px; vertical-align: -1px; margin-right: 0.3rem; }
 .placar-view { margin-bottom: 1rem; }
+.quoruns { display: grid; gap: 0.2rem; border-top: 1px solid var(--line); padding-top: 0.85rem; margin-top: 0.25rem; }
+.qrow { display: grid; grid-template-columns: 3.2rem minmax(0, 1fr) minmax(0, 15rem); gap: 0.4rem 0.9rem; align-items: center; padding: 0.55rem 0; border-bottom: 1px dashed var(--line); }
+.qrow:last-child { border-bottom: 0; }
+.qn { font-family: var(--f-display); font-weight: 700; font-size: 1.5rem; color: var(--fg); }
+.qt { display: grid; gap: 0.15rem; min-width: 0; font-size: 0.85rem; }
+.qt span { font-size: 0.72rem; color: var(--fg2); }
+.qbar { position: relative; display: flex; height: 8px; border-radius: 999px; overflow: visible; background: var(--track); margin-top: 0.3rem; }
+.qbar i { display: block; height: 100%; }
+.qbar i:first-child { border-radius: 999px 0 0 999px; }
+.qbar b { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px solid var(--fg); }
+.qs { font-size: 0.78rem; font-weight: 600; color: var(--sc); }
+@media (max-width: 600px) { .qrow { grid-template-columns: 3rem minmax(0, 1fr); } .qs { grid-column: 2; } }
 .seats-cam { grid-template-columns: repeat(38, minmax(0, 1fr)); gap: 2px; max-width: 760px; }
 .seats-cam .seat { border-width: 1px; }
 .spec { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--track); min-width: 140px; }
@@ -898,6 +910,25 @@ function renderRelogio() {
 renderRitmo();
 setInterval(renderRelogio, 15000);
 
+/* ---------- Quóruns ---------- */
+// rows: [{t: rótulo, n: votos, base: fundamento, nota?}]; lados: {esquerda, centro, direita}
+function quoruns(rows, lados, total) {
+  const ord = LADOS.map(([k, n, c]) => ({ k, n, c, v: lados[k] || 0 })).sort((a, b) => b.v - a.v);
+  const top = ord[0];
+  return `<div class="quoruns" style="grid-column:1/-1">
+    <div class="label" style="margin-bottom:.4rem">Quanto cada votação exige · ${total} cadeiras</div>
+    ${rows.map(r => {
+      const ok = top.v >= r.n, falta = r.n - top.v;
+      return `<div class="qrow">
+        <div class="qn num">${r.n}</div>
+        <div class="qt"><strong>${r.t}</strong><span>${r.base}${r.nota ? ` · ${r.nota}` : ""}</span>
+          <div class="qbar">${LADOS.map(([k, , c]) => `<i style="width:${(lados[k] || 0) / total * 100}%;background:${c}"></i>`).join("")}<b style="left:${r.n / total * 100}%"></b></div></div>
+        <div class="qs" style="--sc:${ok ? top.c : "var(--fg2)"}">${ok ? `${top.n} alcança sozinha (${top.v})` : `Nenhum lado sozinho · ${top.n} tem ${top.v}, faltam ${falta}`}</div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
 /* ---------- Senado ---------- */
 const S = D.senado || [];
 const LADOS = [["esquerda", "Esquerda", "var(--esq)"], ["centro", "Centro", "var(--cen)"], ["direita", "Direita", "var(--dir)"]];
@@ -945,7 +976,11 @@ function renderPlacar() {
     return `<button class="side ${senLado === k ? "on" : ""}" type="button" data-lado="${k}" style="--sc:${cor}" aria-pressed="${senLado === k}">
       <div class="t">${nome}</div><div class="n num">${g.length}${delta}</div>
       <div class="d num">${det}</div></button>`;
-  }).join("") + (senView === "disputa" ? "" : `<div class="marcos" style="grid-column:1/-1">Maioria absoluta: 41 cadeiras. Emenda constitucional: 49 (três quintos). ${(() => { const top = LADOS.map(([k, n]) => [n, all.filter(c => c.lado === k).length]).sort((x, y) => y[1] - x[1])[0]; return top[1] >= 49 ? `${top[0]} chega aos três quintos.` : top[1] >= 41 ? `${top[0]} tem maioria absoluta sozinha.` : "Nenhum lado tem maioria absoluta sozinho."; })()}</div>`);
+  }).join("") + (senView === "disputa" ? "" : quoruns([
+    { t: "Eleger o presidente do Senado", n: 41, base: "Regimento Interno do Senado, art. 60", nota: "exige maioria dos votos com ao menos 41 presentes; 41 votos garantem a eleição com o plenário cheio" },
+    { t: "Emenda constitucional", n: 49, base: "CF, art. 60, § 2º", nota: "três quintos, em dois turnos" },
+    { t: "Condenar ministro do STF em impeachment", n: 54, base: "CF, art. 52, II e parágrafo único; Lei 1.079/1950", nota: "dois terços do Senado" },
+  ], Object.fromEntries(LADOS.map(([k]) => [k, all.filter(c => c.lado === k).length])), 81));
   $("placar").querySelectorAll(".side").forEach(b => b.onclick = () => setLado(senLado === b.dataset.lado ? "todos" : b.dataset.lado));
   const ord = { esquerda: 0, centro: 1, direita: 2, sem: 3 }, sto = { atual: 0, fica: 0, eleito: 1, lidera: 2 };
   const sorted = all.slice().sort((a, b) => ord[a.lado] - ord[b.lado] || sto[a.st] - sto[b.st]);
@@ -1046,7 +1081,11 @@ function renderCamara() {
     const delta = camView === "proj" && CA ? `<span class="delta" style="color:${d > 0 ? "var(--ok)" : d < 0 ? "var(--warn)" : "var(--fg2)"}">${d > 0 ? "+" : ""}${d}</span>` : "";
     return `<div class="side" style="--sc:${cor};cursor:default"><div class="t">${nome}</div><div class="n num">${L1[k]}${delta}</div>
       <div class="d num">${pf(L1[k] / (total || 1) * 100, 1)} das cadeiras${camView === "proj" && CA ? ` · hoje são ${L0[k]}` : ""}</div></div>`;
-  }).join("") + `<div class="marcos" style="grid-column:1/-1">Maioria absoluta: 257 deputados. Emenda constitucional: 308 (três quintos). ${(() => { const top = LADOS.map(([k, n]) => [n, L1[k]]).sort((a, b) => b[1] - a[1])[0]; return top[1] >= 308 ? `${top[0]} chega aos três quintos.` : top[1] >= 257 ? `${top[0]} tem maioria absoluta sozinha.` : "Nenhum lado tem maioria absoluta sozinho."; })()}${L1.sem ? ` ${L1.sem} sem classificação.` : ""}</div>`;
+  }).join("") + quoruns([
+    { t: "Eleger o presidente da Câmara", n: 257, base: "Regimento Interno da Câmara, art. 7º", nota: "maioria absoluta no 1º escrutínio; no 2º, entre os dois mais votados, basta a maioria simples" },
+    { t: "Emenda constitucional", n: 308, base: "CF, art. 60, § 2º", nota: "três quintos, em dois turnos" },
+    { t: "Autorizar processo de impeachment do Presidente da República", n: 342, base: "CF, art. 51, I", nota: "dois terços da Câmara" },
+  ], L1, 513) + (L1.sem ? `<div class="marcos" style="grid-column:1/-1">${L1.sem} cadeiras sem classificação.</div>` : "");
   const ord = { esquerda: 0, centro: 1, direita: 2, sem: 3 };
   const lista = Object.entries(por).sort((a, b) => ord[ladoDe(a[0])] - ord[ladoDe(b[0])] || b[1] - a[1]);
   $("camSeats").innerHTML = lista.flatMap(([sg, n]) => Array.from({ length: n }, () => `<i class="seat" style="--sc:${LCOR[ladoDe(sg)]}" title="${sg}"></i>`)).join("");
